@@ -1,0 +1,1541 @@
+@extends('layouts.app')
+
+@section('title', 'Data Makalah - Portal Inovasi')
+
+@push('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+    <style type="text/css">
+        .filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* Menambah jarak antar elemen */
+        }
+
+        #filter-status-inovasi {
+            width: 160px;
+            height: 45px;
+            border: 1px solid #d6d8db;
+            /* Border abu-abu cerah */
+            border-radius: 4px;
+            /* Radius sudut border */
+            padding: 8px 12px;
+            /* Padding di dalam dropdown */
+            background-color: #ffffff;
+            /* Background putih */
+            color: #000000;
+            /* Teks hitam */
+            font-size: 14px;
+            /* Ukuran font */
+            transition: border-color 0.3s;
+            /* Transisi untuk perubahan warna border */
+        }
+
+        #filter-status-inovasi:focus {
+            outline: none;
+            /* Menghilangkan outline default */
+            border-color: #d6d8db;
+            /* Border abu-abu cerah saat fokus */
+        }
+
+        .btn-download {
+            background-color: #ffffff;
+            /* Warna latar belakang putih */
+            color: #000000;
+            /* Teks hitam */
+            border: 1px solid #d6d8db;
+            /* Border abu-abu cerah */
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            /* Efek timbul */
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .btn-download:hover {
+            background-color: #f8f9fa;
+            /* Warna putih cerah saat hover */
+            border-color: #d6d8db;
+            /* Border tetap abu-abu cerah saat hover */
+            color: #000000;
+        }
+
+        .btn-download:focus {
+            outline: none;
+            /* Menghilangkan outline default */
+        }
+    </style>
+@endpush
+
+
+
+@section('content')
+    <header class="page-header page-header-compact page-header-light border-bottom bg-white mb-4">
+        <div class="container-xl px-4">
+            <div class="page-header-content">
+                <div class="row align-items-center justify-content-between pt-3">
+                    <div class="col-auto mb-3">
+                        <h1 class="page-header-title">
+                            <div class="page-header-icon"><i data-feather="book"></i></div>
+                            Data Paper - Innovation Paper
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-xl px-4 mt-4">
+        @include('auth.user.paper.navbar')
+        <div class="mb-3">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+                    {{ session('success') }}
+                    <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            @if (session('errors'))
+                <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                    {{ session('errors') }}
+                    <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="filter-container">
+                        @if (Auth::user()->role == 'Admin' || Auth::user()->role == 'Superadmin')
+                            <button class="btn btn-primary btn-sm me-2" type="button" data-bs-toggle="modal"
+                                data-bs-target="#filterModal">Filter</button>
+                            <select id="filter-status-inovasi" name="filter-status-inovasi" class="form-select">
+                                <option value="Not Implemented">Not Implemented</option>
+                                <option value="Progress">Progress</option>
+                                <option value="Implemented">Implemented</option>
+                            </select>
+                        @endif
+                    </div>
+                </div>
+                <table id="datatable-makalah" class="display">
+                    <!-- Tabel akan diisi oleh DataTables -->
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk detail team --}}
+    <div class="modal fade" id="detailTeamMember" tabindex="-1" role="dialog" aria-labelledby="detailTeamMemberTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    {{-- <h5 class="modal-title" id="detailTeamMemberTitle">Detail Team Member</h5> --}}
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 mb-3">
+                            <div class="card mb-2">
+                                <div class="card-header">Detail Team</div>
+                                <div class="card-body">
+                                    <form id="modal-card-form">
+                                        <div class="mb-3">
+                                            <label class="mb-1" for="facilitator">Fasilitator</label>
+                                            <input class="form-control" id="facilitator" type="text" value=""
+                                                readonly />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="mb-1" for="leader">Leader</label>
+                                            <input class="form-control" id="leader" type="text" value=""
+                                                readonly />
+                                        </div>
+                                    </form>
+                                </div>
+
+                            </div>
+
+                            <div class="card mb-2">
+                                <div class="card-header">Foto Tim</div>
+                                <div class="card-body">
+                                    <img src="" id="idFotoTim" alt="" class="w-100">
+                                </div>
+                            </div>
+
+                            <div class="card mb-2">
+                                <div class="card-header">Foto Inovasi Produk</div>
+                                <div class="card-body">
+                                    <img src="" id="idFotoInovasi" alt="" class="w-100">
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">Detail Makalah</div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Judul</div>
+                                        <div class="small mb-0 fw-500" id="judul"></div>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Lokasi Implementasi Inovasi</div>
+                                        <div class="small mb-0" id="inovasi_lokasi"></div>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Abstrak</div>
+                                        <div class="small mb-0" id="abstrak"></div>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Permasalahan</div>
+                                        <div class="small mb-0" id="problem"></div>
+                                    </div>
+
+                                    {{-- <div class="mb-3">
+                                    <div class="fw-bold">Dampak Masalah</div>
+                                    <div class="small mb-0" id="problem_impact"></div>
+                                </div> --}}
+                                    <hr>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Penyebab Utama</div>
+                                        <div class="small mb-0" id="main_cause"></div>
+                                    </div>
+                                    <hr>
+                                    <div class="mb-3">
+                                        <div class="fw-bold">Solusi</div>
+                                        <div class="small mb-0" id="solution"></div>
+                                    </div>
+                                    <hr>
+                                    {{-- <div class="mb-3">
+                                    <div class="fw-bold">Dampak Solusi</div>
+                                    <div class="small mb-0" id="outcome"></div>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <div class="fw-bold">Dampak Positif</div>
+                                    <div class="small mb-0" id="performance"></div>
+                                </div> --}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk filter khusus admin --}}
+    <div class="modal fade" id="filterModal" role="dialog" aria-labelledby="detailTeamMemberTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailTeamMemberTitle">Filter</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="mb-1" for="filter-role">Role</label>
+                        <select id="filter-role" name="filter-role" class="form-select">
+                            <?php if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Superadmin'): ?>
+                            <option value="innovator">Innovator</option>
+                            <option value="admin" <?php echo auth()->user()->role == 'Admin' || auth()->user()->role == 'Superadmin' ? 'selected' : ''; ?>>Admin</option>
+                            <?php else: ?>
+                            <option value="innovator" selected>Innovator</option>
+                            <option value="admin">Admin</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="mb-1" for="filter-company">Company</label>
+                        <select id="filter-company" name="filter-company" class="form-select" disabled>
+                            @foreach ($data_company as $company)
+                                <option value="{{ $company->company_code }}"
+                                    {{ $company->company_code == Auth::user()->company_code ? 'selected' : '' }}>
+                                    {{ $company->company_name }} </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk approval makalah fasilitator --}}
+    <div class="modal fade" id="accFasilitator" tabindex="-1" role="dialog" aria-labelledby="accFasilitatorTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accFasilitatorTitle">Approval Makalah oleh Fasilitator</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="accFasilPaperForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="modal-body">
+                        <div class="mb">
+                            <select class="form-select" aria-label="Default select example" name="status"
+                                id="status_by_fasil" require>
+                                <option selected>-</option>
+                                <option value="accepted paper by facilitator">accept</option>
+                                <option value="rejected paper by facilitator">reject</option>
+                            </select>
+                        </div>
+                        <div class="mb">
+                            <label class="mb-1" for="commentFacilitator">Berikan Komentar</label>
+                            <textarea name="comment" class="form-control" id="commentFacilitator" cols="30" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal"> Approval</button>
+                        <button class="btn btn-danger" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk approval benefit fasilitator --}}
+    <div class="modal fade" id="accFasilitatorBnefit" tabindex="-1" role="dialog"
+        aria-labelledby="accFasilitatorBnefit" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accFasilitatorBnefitTitle">Approval Benefit oleh Fasilitator</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="accFasilBenefitForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <select class="form-select" aria-label="Default select example" name="status"
+                        id="change_benefit_by_fasil" require>
+                        <option selected>-</option>
+                        <option value="accepted benefit by facilitator">accept</option>
+                        <option value="rejected benefit by facilitator">reject</option>
+                    </select>
+                    <div class="modal-body">
+                        <div class="mb">
+                            <label class="mb-1" for="commentFacilitator">Berikan Komentar</label>
+                            <textarea name="comment" class="form-control" id="commentFacilitator" cols="30" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal"> Approval</button>
+                        <button class="btn btn-danger" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk approval benefit GM --}}
+    <div class="modal fade" id="accGM" tabindex="-1" role="dialog" aria-labelledby="accGMTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accGMTitle">Approval Benefit oleh General Manager</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="accGmBenefitForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <select class="form-select" aria-label="Default select example" name="status"
+                        id="change_benefit_by_gm" require>
+                        <option selected>-</option>
+                        <option value="accepted benefit by general manager">accept</option>
+                        <option value="rejected benefit by general manager">reject</option>
+                    </select>
+                    <div class="modal-body">
+                        <div class="mb">
+                            <label class="mb-1" for="commentGM">Berikan Komentar</label>
+                            <textarea name="comment" class="form-control" id="commentGMr" cols="30" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal"> Approval</button>
+                        <button class="btn btn-danger" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk approval admin --}}
+    <div class="modal fade" id="accAdmin" tabindex="-1" role="dialog" aria-labelledby="accAdminTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addBenefitTitle">Approval oleh Admin</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="accAdminForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <input type="text" name="evaluatedBy" value="innovation admin" hidden>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="mb-1" for="status_by_admin">Status</label>
+                            <select class="form-select" aria-label="Default select example" name="status"
+                                id="status_by_admin" require>
+                                <option selected>-</option>
+                                <option value="accept">accept</option>
+                                <option value="reject">reject</option>
+                                <option value="replicate">replicate</option>
+                                <option value="not complete">not complete</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div id="registEvent">
+
+                            </div>
+                        </div>
+
+
+                        <!-- <input type="text" name="status" value="accept" hidden> -->
+
+                        <div class="mb">
+                            <label class="mb-1" for="commentFacilitator">Comment</label>
+                            <textarea name="comment" class="form-control" id="commentFacilitator" cols="30" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal" id="accAdminButton"
+                            disabled> Approval</button>
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal untuk upload beberapa dokumen --}}
+    <div class="modal fade" id="uploadDocument" tabindex="-1" role="dialog" aria-labelledby="uploadDocumentTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDocumentTitle">Upload Dokumen Pendukung </h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="uploadDocumentForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            {{-- <p id="paper_id_input"></p> --}}
+                            <input type="hidden" name="paper_id" id="paper_id_input" value="">
+                            <label for="inputBeberapaDokumen">File Berupa PDF, Video, PPT, Excel, Gambar</label>
+                            <input type="file" name="document_support[]" class="form-control"
+                                id="inputBeberapaDokumen" multiple>
+                        </div>
+                        <div class="mb-3">
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal">Submit</button>
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal show beberapa dokumen --}}
+    <div class="modal fade" id="showDocument" tabindex="-1" role="dialog" aria-labelledby="showDocumentTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="showDocumentTitle">Show Dokumen Pendukung </h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div id="resultContainer"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk liat comment --}}
+    <div class="modal fade" id="commentModal" tabindex="-1" role="dialog" aria-labelledby="accFasilitatorTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="commentTitle"></h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb">
+                        <label class="mb-1" for="comment">Comment</label>
+                        <textarea name="comment" class="form-control" id="comment" cols="30" rows="3" readonly></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-dark" type="button" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk info update --}}
+    <div class="modal fade" id="updateData" tabindex="-1" role="dialog" aria-labelledby="updateDataTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateDataTitle">Update Data</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="updateDataTeam" method="post" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="inputInnovationTitle">Innovation Title</label>
+                            <input class="form-control" id="inputInnovationTitle" type="text" name="innovation_title"
+                                value="">
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputTeamName">Team Name</label>
+                            <input class="form-control" id="inputTeamName" type="text" value=""
+                                name="team_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputCategory">Category</label>
+                            <select name="category" id="inputCategory" class="form-select">
+                                @foreach ($data_category as $category)
+                                    <option value="{{ $category->id }}">{{ $category->category_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputTheme">Theme</label>
+                            <select name="theme" id="inputTheme" class="form-select">
+                                @foreach ($data_theme as $theme)
+                                    <option value="{{ $theme->id }}">{{ $theme->theme_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk info history --}}
+    <div class="modal fade" id="infoHistory" tabindex="-1" role="dialog" aria-labelledby="infoHistoryTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="infoHistoryTitle">History Activity</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="timeline" id="history">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal untuk info rollback --}}
+    <div class="modal fade" id="rollback" tabindex="-1" role="dialog" aria-labelledby="rolbackTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rolbackTitle">Rollback</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formRollback" method="POST" action="{{ route('paper.rollback', ['id' => ':id']) }}">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="mb-1" for="rollback_option">Rollback Option</label>
+                            <select class="form-select" name="rollback_option" id="rollback_option">
+                                <option value="full_paper">Rollback Paper</option>
+                                <option value="benefit">Rollback Benefit</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inputCommentRollback" class="">Comment</label>
+                            <textarea name="comment" id="inputCommentRollback" cols="15" rows="7" class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="submit" data-bs-dismiss="modal">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal untuk upload step --}}
+    <div class="modal fade" id="uploadStep" tabindex="-1" role="dialog" aria-labelledby="uploadDocumentTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDocumentTitle">Upload Step Document</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="uploadStepForm" class="upload-step-form" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            {{-- <p id="paper_id_input"></p> --}}
+                            <input type="hidden" name="paper_id" id="paper_id_input" value="">
+                            <input type="file" name="file_stage" class="form-control" multiple>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary btn-upload-step" type="submit"
+                            data-bs-dismiss="modal">Submit</button>
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@push('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+    <style type="text/css">
+        /* Menambahkan garis pada tabel dengan sudut yang membulat */
+        table.dataTable {
+            border-collapse: separate;
+            /* Memisahkan border untuk efek modern */
+            border-spacing: 0;
+            /* Menghilangkan jarak antara sel */
+        }
+
+        table.dataTable th,
+        table.dataTable td {
+            border: 1px solid #d6d8db;
+            /* Garis border abu-abu cerah */
+            padding: 8px;
+            /* Jarak dalam sel tabel */
+            text-align: left;
+            /* Penataan teks ke kiri */
+            border-radius: 4px;
+            /* Sudut border yang membulat pada sel tabel */
+        }
+
+        table.dataTable thead th {
+            background-color: #f9f9f9;
+            /* Latar belakang header tabel */
+            font-weight: bold;
+            /* Menebalkan font header tabel */
+        }
+
+        table.dataTable tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+            /* Warna latar belakang baris ganjil */
+        }
+
+        table.dataTable tbody tr:nth-child(even) {
+            background-color: #ffffff;
+            /* Warna latar belakang baris genap */
+        }
+
+        table.dataTable tbody tr {
+            transition: background-color 0.3s;
+            /* Transisi halus untuk perubahan warna latar belakang */
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: #f1f1f1;
+            /* Warna latar belakang baris saat hover */
+        }
+
+        .filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* Menambah jarak antar elemen */
+        }
+
+        #filter-status-inovasi {
+            width: 160px;
+            height: 45px;
+            border: 1px solid #d6d8db;
+            /* Border abu-abu cerah tipis */
+            border-radius: 4px;
+            /* Radius sudut border */
+            padding: 8px 12px;
+            /* Padding di dalam dropdown */
+            background-color: #ffffff;
+            /* Background putih */
+            color: #000000;
+            /* Teks hitam */
+            font-size: 14px;
+            /* Ukuran font */
+            transition: border-color 0.3s;
+            /* Transisi untuk perubahan warna border */
+        }
+
+        #filter-status-inovasi:focus {
+            outline: none;
+            /* Menghilangkan outline default */
+            border-color: #d6d8db;
+            /* Border abu-abu cerah saat fokus */
+        }
+
+        .btn-red {
+            background-color: #ffffff;
+            /* Warna putih cerah */
+            color: #000000;
+            /* Teks hitam */
+            border: 1px solid #d6d8db;
+            /* Border abu-abu cerah tipis */
+            border-radius: 4px;
+            padding: 8px 16px;
+            /* Jarak dalam tombol */
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* Efek timbul */
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .btn-red:hover {
+            background-color: #f0f0f0;
+            /* Warna abu-abu sangat cerah saat hover */
+            border-color: #d6d8db;
+            /* Border abu-abu cerah */
+            color: #000000;
+            /* Teks hitam */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            /* Efek timbul lebih dalam saat hover */
+        }
+
+        .btn-red:focus {
+            outline: none;
+            /* Menghilangkan outline default */
+        }
+    </style>
+@endpush
+
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#datatable-makalah').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "responsive": true,
+            "dom": 'lBfrtip',
+            "buttons": [
+                'excel', 'csv', 'pdf'
+            ],
+            "ajax": {
+                "url": "{{ route('query.getmakalah') }}",
+                "type": "GET",
+                "dataSrc": function(data) {
+                    return data.data;
+                },
+                data: function(d) {
+                    d.filterCompany = $('#filter-company').val();
+                    d.filterRole = $('#filter-role').val();
+                    d.status_inovasi = $('#filter-status-inovasi')
+                        .val(); //ambil nilai yg dipilih ke server
+                    return d;
+                }
+            },
+            "columns": [{
+                    "data": "DT_RowIndex",
+                    "title": "No"
+                },
+                {
+                    "data": "innovation_title",
+                    "title": "Innovation Title"
+                },
+                {
+                    "data": "team_name",
+                    "title": "Team Name"
+                },
+                {
+                    "data": "detail_team",
+                    "title": "Detail Team"
+                },
+                {
+                    "data": "company_name",
+                    "title": "Company"
+                },
+                {
+                    "data": "category_name",
+                    "title": "Category"
+                },
+                {
+                    "data": "theme_name",
+                    "title": "Theme"
+                },
+                {
+                    "data": "step_1",
+                    "title": "Step 1"
+                },
+                {
+                    "data": "step_2",
+                    "title": "Step 2"
+                },
+                {
+                    "data": "step_3",
+                    "title": "Step 3"
+                },
+                {
+                    "data": "step_4",
+                    "title": "Step 4"
+                },
+                {
+                    "data": "step_5",
+                    "title": "Step 5"
+                },
+                {
+                    "data": "step_6",
+                    "title": "Step 6"
+                },
+                {
+                    "data": "step_7",
+                    "title": "Step 7"
+                },
+                {
+                    "data": "step_8",
+                    "title": "Step 8"
+                },
+                {
+                    "data": "full_paper",
+                    "title": "Full Paper"
+                },
+                {
+                    "data": "benefit",
+                    "title": "Benefit"
+                },
+                {
+                    "data": "approval",
+                    "title": "Approval"
+                },
+                {
+                    "data": "Dokumen",
+                    "title": "Dokumen"
+                },
+                {
+                    "data": "status",
+                    "title": "Status"
+                },
+                {
+                    "data": "action",
+                    "title": "Action"
+                },
+            ],
+            "scrollX": true,
+            "scrollY": true,
+            "stateSave": true,
+        });
+    });
+</script>
+
+
+@push('js')
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/classic/ckeditor.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script type="">
+    $(document).ready(function() {
+        var dataTable = $('#datatable-makalah').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "responsive" : true,
+            "dom": 'lBfrtip',
+            "buttons": [
+                'excel', 'csv', 'pdf'
+            ],
+            "ajax": {
+                "url": "{{ route('query.getmakalah') }}",
+                "type": "GET",
+                "dataSrc": function (data) {
+                    // console.log('Jumlah data total: ' + data.recordsTotal);
+                    // console.log('Jumlah data setelah filter: ' + data.recordsFiltered);
+                    // console.log('Jumlah data setelah filter: ' + data.data);
+                    return data.data;
+                },
+                data: function (d) {
+                     d.filterCompany = $('#filter-company').val();
+                     d.filterRole = $('#filter-role').val();
+                     d.status_inovasi = $('#filter-status-inovasi').val(); //ambil nilai yg dipilih ke server
+                     return d;
+                }
+            },
+            "columns": [
+                {"data": "DT_RowIndex", "title": "No"},
+                {"data": "innovation_title", "title": "Innovation Title"},
+                // {"data": "inovasi_lokasi", "tittle": "Lokasi Inovasi"},
+                {"data": "team_name", "title": "Team Name"},
+                {"data": "detail_team","title": "Detail Team"},
+                {"data": "company_name","title": "Company"},
+                {"data": "category_name","title": "Category"},
+                {"data": "theme_name","title": "Theme"},
+                {"data": "step_1","title": "Step 1"},
+                {"data": "step_2","title": "Step 2"},
+                {"data": "step_3","title": "Step 3"},
+                {"data": "step_4","title": "Step 4"},
+                {"data": "step_5","title": "Step 5"},
+                {"data": "step_6","title": "Step 6"},
+                {"data": "step_7","title": "Step 7"},
+                {"data": "step_8","title": "Step 8"},
+                {"data": "full_paper","title": "Full Paper"},
+                {"data": "benefit","title": "Benefit"},
+                {"data": "approval","title": "Approval"},
+                {"data": "Dokumen","title": "Dokumen"},
+                {"data": "status","title": "Status"},
+                {"data": "action","title": "Action"},
+            ],
+            "scrollX": true,
+            "scrollY": true,
+            "stateSave": true,
+        });
+
+        $('#filter-company').on('change', function () {
+            dataTable.ajax.reload();
+        });
+
+        $('#filter-role').on('change', function () {
+            dataTable.ajax.reload();
+
+            user_role = "{{ Auth::user()->role }}"
+            if($('#filter-role').val() == 'admin' && user_role == 'Superadmin'){
+                $('#filter-company').removeAttr("disabled");
+            }else{
+                $("#filter-company").attr("disabled", "disabled");
+            }
+        });
+
+        $('#filter-status-inovasi').on('change', function() {
+            dataTable.ajax.reload();
+        });
+    });
+
+    // Ambil data tim
+    function get_data_on_modal(IdTeam){
+        var fotoTim;
+        var fotoInovasi;
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: "{{ route('query.get_data_member') }}",
+            type: "POST",
+            data: {
+                team_id: IdTeam
+            },
+            success: function(data) {
+                // Menampilkan data yang diterima dari server
+                //console.log(data.data);
+                console.log(data);
+                // var ul = document.getElementById('List')
+
+                if(typeof data.data.member !== 'undefined'){
+                    new_div_member = `
+                    <div class="mb-3" id="member-card">
+                        <label class="mb-1" for="dataName">Team Member</label>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush" id="List">
+                            </ul>
+                        </div>
+                    </div>`;
+
+                    document.getElementById('modal-card-form').insertAdjacentHTML('beforeend', new_div_member);
+                    var ul = document.getElementById('List')
+                }
+
+                if(typeof data.data.outsource !== 'undefined'){
+                    new_div_outsource = `
+                    <div class="mb-3" id="outsource-card">
+                        <label class="mb-1" for="dataName">Team Member Outsource</label>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush" id="outsource-List">
+
+                            </ul>
+                        </div>
+                    </div>
+                    `;
+                    document.getElementById('modal-card-form').insertAdjacentHTML('beforeend', new_div_outsource);
+                    var ul_outsource = document.getElementById('outsource-List')
+                }
+
+                Object.keys(data.data).forEach(function(indeks) {
+                    if(indeks == 'member'){
+
+                        Object.keys(data.data[indeks]).forEach(function(indeks2) {
+                            var elemenLi = document.createElement("li");
+
+                            elemenLi.className = "list-group-item";
+                            elemenLi.id = indeks + (parseInt(indeks2) + 1);
+
+                            var elemenA = document.createElement("a");
+                            elemenA.textContent = data.data[indeks][indeks2].name;
+
+                            elemenLi.appendChild(elemenA)
+                            ul.appendChild(elemenLi)
+                        })
+                    }else if(indeks == 'outsource'){
+
+                        Object.keys(data.data[indeks]).forEach(function(indeks2) {
+                            var elemenLi = document.createElement("li");
+
+                            elemenLi.className = "list-group-item";
+                            elemenLi.id = indeks + (parseInt(indeks2) + 1);
+
+                            var elemenA = document.createElement("a");
+                            elemenA.textContent = data.data[indeks][indeks2].name;
+
+                            elemenLi.appendChild(elemenA)
+                            ul_outsource.appendChild(elemenLi)
+                        })
+                    }else{
+                        document.getElementById(indeks).value = data.data[indeks].name
+                    }
+                });
+                var judulElement = document.getElementById('judul');
+                judulElement.textContent = data.paper[0].innovation_title;
+
+                var lokasiElement = document.getElementById('inovasi_lokasi');
+                lokasiElement.textContent = data.paper[0].inovasi_lokasi;
+                //document.getElementById('inovasi_lokasi').innerHTML = data.paper[0].inovasi_lokasi;
+                // var lokasiElement = document.getElementById('inovasi_lokasi');
+                //     if (data.papers && data.paper[0] && data.paper[0].inovasi_lokasi) {
+                //         lokasiElement.textContent = data.paper[0].inovasi_lokasi;
+                //     } else {
+                //         lokasiElement.textContent = "Data tidak tersedia";
+                //     }
+
+
+                var abstractElement = document.getElementById('abstrak');
+                abstractElement.textContent = data.paper[0].abstract;
+
+                var problemElement = document.getElementById('problem');
+                problemElement.textContent = data.paper[0].problem;
+
+                // var problem_impactElement = document.getElementById('problem_impact');
+                // problem_impactElement.textContent = data.paper[0].problem_impact;
+
+                var main_causeElement = document.getElementById('main_cause');
+                main_causeElement.textContent = data.paper[0].main_cause;
+
+                var solutionElement = document.getElementById('solution');
+                solutionElement.textContent = data.paper[0].solution;
+
+                // var outcomeElement = document.getElementById('outcome');
+                // outcomeElement.textContent = data.paper[0].outcome;
+
+                // var performanceElement = document.getElementById('performance');
+                // performanceElement.textContent = data.paper[0].performance;
+
+                fotoTim =  '{{route('query.getFile')}}' + '?directory=' + data.paper[0].proof_idea;
+                fotoInovasi =  '{{route('query.getFile')}}' + '?directory=' + data.paper[0].innovation_photo;
+
+                // Set the URL as the source for the iframe
+                document.getElementById("idFotoTim").src = fotoTim;
+                document.getElementById("idFotoInovasi").src = fotoInovasi;
+            },
+            error: function(error) {
+                // Menampilkan pesan kesalahan jika terjadi kesalahan dalam permintaan Ajax
+                console.log(error.responseJSON);
+                alert(error.responseJSON.message);
+            }
+        });
+
+    }
+
+    // digunakan untuk menghapus detail member ketika modal ditutup
+    function remove_detail(){
+        document.getElementById('facilitator').value = ''
+        document.getElementById('leader').value = ''
+
+        var elemenMember = document.getElementById('member-card')
+        if(elemenMember != null){
+            elemenMember.remove()
+        }
+        var elemenOutsource = document.getElementById('outsource-card');
+        if(elemenOutsource != null){
+            elemenOutsource.remove()
+        }
+    }
+    // menjalnkan fungsi ketika modal ditutup
+    $('#detailTeamMember').on('hidden.bs.modal', function () {
+        remove_detail()
+    });
+
+    function check_admin_approve(idTeam){
+        statusSelectField = document.getElementById('status_by_admin')
+        adminButton = document.getElementById('accAdminButton')
+
+        data_event = check_if_accept(idTeam)
+
+        if(statusSelectField.value != "-" && data_event.status != 'not active' && data_event.event_name != undefined){
+            adminButton.removeAttribute("disabled");
+        }else{
+            adminButton.setAttribute("disabled", true);
+        }
+    }
+
+    function approve_paper_fasil_modal(idPaper){
+        // alert(idPapern)
+        var form = document.getElementById('accFasilPaperForm');
+
+        var url = `{{ route('paper.approvePaperFasil', ['id' => ':idPaper']) }}`;
+        url = url.replace(':idPaper', idPaper);
+        form.action = url;
+    }
+    $('#accFasilitator').on('hidden.bs.modal', function () {
+        var form = document.getElementById('accFasilPaperForm');
+
+        form.removeAttribute('action');
+    });
+
+    function approve_benefit_fasil_modal(idPaper){
+        // alert(idPapern)
+        var form = document.getElementById('accFasilBenefitForm');
+
+        var url = `{{ route('paper.approveBenefitFasil', ['id' => ':idPaper']) }}`;
+        url = url.replace(':idPaper', idPaper);
+        form.action = url;
+    }
+    $('#accFasilitatorBnefit').on('hidden.bs.modal', function () {
+        var form = document.getElementById('accFasilBenefitForm');
+
+        form.removeAttribute('action');
+    });
+
+    function approve_benefit_gm_modal(idPaper){
+        // alert(idPapern)
+        var form = document.getElementById('accGmBenefitForm');
+
+        var url = `{{ route('paper.approveBenefitGM', ['id' => ':idPaper']) }}`;
+        url = url.replace(':idPaper', idPaper);
+        form.action = url;
+    }
+    $('#accGM').on('hidden.bs.modal', function () {
+        var form = document.getElementById('accGmBenefitForm');
+
+        form.removeAttribute('action');
+    });
+
+    function approve_admin_modal(idPaper, idTeam){
+        // alert(idPapern)
+        var form = document.getElementById('accAdminForm');
+        statusSelectField = document.getElementById('status_by_admin')
+
+        var url = `{{ route('paper.approveadmin', ['id' => ':idPaper']) }}`;
+        url = url.replace(':idPaper', idPaper);
+        form.action = url;
+
+        // check_admin_approve()
+        statusSelectField.setAttribute('onchange', `check_admin_approve(${idTeam})`)
+    }
+
+    function upload_document_modal(idPaper){
+
+        document.getElementById("paper_id_input").value = idPaper;
+
+        var form = document.getElementById('uploadDocumentForm');
+
+        var url = `{{ route('paper.uploadDocument') }}`;
+        form.action = url;
+        form.method = post;
+    }
+    function show_document_modal(idPaper){
+        // var fileUrl;
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'GET',
+            url: '{{ route('query.custom') }}',
+            dataType: 'json',
+            data: {
+                table: "document_supportings",
+                join: {
+                        'papers':{
+                            'papers.id': 'document_supportings.paper_id'
+                        },
+                    },
+                where: {
+                    "papers.id": idPaper
+                },
+                limit: 100,
+                select:[
+                        'document_supportings.id as id',
+                        'file_name',
+                        'path',
+                    ]
+            },
+            // dataType: 'json',
+            success: function(response) {
+                console.log(response)
+                $('#resultContainer').empty();
+                var container = $('#resultContainer');
+                response.forEach(function(item) {
+                    container.append(deleteBtn);
+                    //extention
+                    var fileUrl = '{{ route('query.getFile') }}' + '?directory=' + item.path;
+                    if (item.file_name.toLowerCase().endsWith('.jpg') || item.file_name.toLowerCase().endsWith('.png') || item.file_name.toLowerCase().endsWith('.jpeg')) {
+                        var imgElement = $('<img>').attr({
+                            'class': "w-100",
+                            'src': fileUrl,
+                            'alt': item.file_name,
+                            // 'width': 300,  // Ganti dengan lebar yang diinginkan
+                            // 'height': 200  // Ganti dengan tinggi yang diinginkan
+                        });
+
+                        container.append(imgElement);
+                    } else if(item.file_name.toLowerCase().endsWith('.pdf')) {
+                        // Membuat elemen iframe untuk setiap file PDF
+                        var iframeElement = document.createElement('iframe');
+                        iframeElement.src = fileUrl;
+                        iframeElement.width = '100%';
+                        iframeElement.height = '720px';
+
+                        // Menambahkan elemen iframe ke dalam resultContainer
+                        resultContainer.appendChild(iframeElement);
+                    }
+
+                    var form = $('<form>', {
+                        method: 'POST', // Explicitly set HTTP method to POST
+                        action: '{{ route('paper.deleteDocument') }}' // Dynamically generate route using Laravel's route helper
+                    });
+
+                    var deleteBtn = $('<button>')
+                                    .text('Delete')
+                                    .attr('class', 'btn btn-danger my-3') // Updated class to Bootstrap's btn btn-danger
+                                    .attr('type', 'submit'); // Set button type to submit for form submission
+
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: '_method',
+                        value: 'DELETE'
+                    }));
+
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: 'id',
+                        value: item.id // Include hidden field for spoofing DELETE method
+                    }));
+
+                    // Include CSRF token if applicable (assuming Laravel's CSRF protection)
+                    form.append($('<input>', {
+                        type: 'hidden',
+                        name: '_token',
+                        value: '{{ csrf_token() }}'
+                    }));
+
+                    form.append(deleteBtn);
+
+                    // Append the form containing the delete button to the container
+                    container.append(form);
+                    container.append('<hr>');
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+        });
+    }
+
+    function check_if_accept(idTeam){
+        registEventDiv = document.getElementById('registEvent')
+        statusSelectField = document.getElementById('status_by_admin')
+
+        var year_now = new Date().getFullYear();
+        // alert(year_now)
+        if(statusSelectField.value == 'accept'){
+            data_team = get_single_data_from_ajax('teams', {'id': idTeam})
+            data_event = get_single_data_from_ajax('events', {
+                'company_code': data_team.company_code,
+                'status': ['active']
+            },3)
+            // console.log(data_event);
+            if(data_event.event_name == undefined){
+                new_input = `
+                    <div class="mb-3">
+                        <label class="mb-1" for="id_eventID">Event - Year</label>
+                        <select class="form-select" aria-label="Default select example"
+                            name="event_id" id="id_eventID"
+                            placeholder="Pilih year" readonly required>
+                            <option value=""> - </option>
+                        </select>
+                    </div>
+                `;
+            }else{
+                new_input = `
+                    <div class="mb-3">
+                        <label class="mb-1" for="id_eventID">Event - Year</label>
+                        <select class="form-select" aria-label="Default select example"
+                            name="event_id" id="id_eventID"
+                            placeholder="Pilih year" readonly required>
+                            <option value="${data_event.id}"> ${data_event.event_name} - ${data_event.year}</option>
+                        </select>
+                    </div>
+
+                `;
+            }
+
+
+            // <div class="mb-3">
+            //         <label class="mb-1" for="id_year">Year</label>
+            //         <select class="form-select" aria-label="Default select example"
+            //             name="year" id="id_year"
+            //             placeholder="Pilih year" required>
+            //             <option value="${year_now}"> ${year_now}</option>
+            //             <option value="${year_now + 1}"> ${year_now + 1}</option>
+            //             <option value="${year_now + 2}"> ${year_now + 2}</option>
+            //             <option value="${year_now + 3}"> ${year_now + 3}</option>
+            //         </select>
+            //     </div>
+
+            registEventDiv.insertAdjacentHTML('beforeend', new_input);
+        }else{
+            registEventDiv.innerHTML = ""
+        }
+
+        return data_event
+    }
+
+    $('#accAdmin').on('hidden.bs.modal', function () {
+        var form = document.getElementById('accAdminForm');
+
+        form.removeAttribute('action');
+
+        document.getElementById('registEvent').innerHTML = ""
+        document.getElementById('status_by_admin').value = '-'
+    });
+
+    function get_single_data_from_ajax(table, data_where, limit_page=1) {
+        let result_data
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            async: false,
+            type: 'GET',
+            url: '{{ route('query.custom') }}',
+            dataType: 'json',
+            data: {
+                table: `${table}`,
+                where: data_where,
+                limit: limit_page
+            },
+            success: function(response) {
+                // console.log(response[0]);
+                result_data = response[0]
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+                result_data = []
+            }
+        })
+        return result_data
+    }
+
+    function get_comment(idPaper, writer){
+        data_comment = get_single_data_from_ajax('comments', {
+            'paper_id': idPaper,
+            'writer': writer
+        })
+
+        if(Object.keys(data_comment).length){
+            document.getElementById('comment').value = data_comment.comment
+        }
+        document.getElementById('commentTitle').innerHTML = "Comment " + writer
+    }
+
+    $('#commentModal').on('hidden.bs.modal', function () {
+        document.getElementById('comment').value = ""
+        document.getElementById('commentTitle').innerHTML = ""
+    });
+
+    function get_data_modal_update(team_id){
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'GET',
+            url: '{{ route('query.custom') }}',
+            dataType: 'json',
+            data: {
+                table: "teams",
+                where: {
+                    "teams.id": team_id
+                },
+                limit: 1,
+                join: {
+                        'papers':{
+                            'papers.team_id': 'teams.id'
+                        },
+                        'categories':{
+                            'categories.id': 'teams.category_id'
+                        },
+                        'themes':{
+                            'themes.id': 'teams.theme_id'
+                        },
+                    },
+                select:[
+                        'innovation_title',
+                        'team_name',
+                        'category_name',
+                        'theme_name',
+                        'themes.id as theme_id',
+                        'categories.id as category_id'
+                    ]
+            },
+            // dataType: 'json',
+            success: function(response) {
+                console.log(response)
+                document.getElementById("inputInnovationTitle").value = response[0].innovation_title;
+                document.getElementById("inputTeamName").value = response[0].team_name;
+
+                //selected category
+                var categorySelected = document.getElementById("inputCategory");
+                // Loop through options and set the selected attribute for the matching themeId
+                for (var i = 0; i < categorySelected.options.length; i++) {
+                    if (categorySelected.options[i].value == response[0].category_id) {
+                        categorySelected.options[i].selected = true;
+                        break;
+                    }
+                }
+
+                //selected theme
+                var themeSelected = document.getElementById("inputTheme");
+                // Loop through options and set the selected attribute for the matching themeId
+                for (var i = 0; i < themeSelected.options.length; i++) {
+                    if (themeSelected.options[i].value == response[0].theme_id) {
+                        themeSelected.options[i].selected = true;
+                        break;
+                    }
+                }
+
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+        });
+
+        var form = document.getElementById('updateDataTeam');
+        var url = `{{ route('paper.update', ['id' => ':team_id']) }}`;
+        url = url.replace(':team_id', team_id);
+        form.action = url;
+    }
+
+    function get_data_modal_history(team_id) {
+        $.ajax({
+            url: '{{route('query.custom')}}',
+            type: 'GET',
+            data: {
+                table: 'histories',
+                where: {
+                    "team_id": team_id
+                },
+                limit: 1000
+            },
+            dataType: 'json',
+            success: function(data) {
+
+                var history = $('#history'); // Dapatkan elemen dengan ID "history"
+                history.empty(); // Membersihkan elemen history sebelum menambahkan data baru
+
+                data.forEach(function(item) {
+                    var createdAt = item.created_at;
+                    var date = new Date(createdAt);
+                    var day = date.getDate();
+                    var month = date.getMonth() + 1; // Perhatikan bahwa bulan dimulai dari 0, jadi tambahkan 1
+                    var year = date.getFullYear();
+                    var formattedDate = ('0' + day).slice(-2) + '/' + ('0' + month).slice(-2) + '/' + year;
+
+
+                    var timelineItem = $('<div class="timeline-item">');
+
+                    var marker = $('<div class="timeline-item-marker">');
+                    marker.append('<div class="timeline-item-marker-text">' + formattedDate + '</div>');
+                    marker.append('<div class="timeline-item-marker-indicator"><i data-feather="check"></i></div>');
+
+                    var content = $('<div class="timeline-item-content">' + item.activity + '</div>');
+
+                    timelineItem.append(marker);
+                    timelineItem.append(content);
+
+                    history.append(timelineItem);
+                });
+
+                // Jika Anda ingin memanggil Feather Icons, Anda perlu menginisialisasi mereka setelah menambahkan elemen baru
+                feather.replace()
+            },
+            error: function() {
+                // Handle kesalahan jika terjadi
+                console.log(error.responseJSON);
+                alert(error.responseJSON.message);
+                // console.error('Terjadi kesalahan saat mengambil data.');
+            }
+        });
+    }
+
+    function change_url(id, elementid) {
+        //link untuk update -> rollback
+        var form = document.getElementById(elementid);
+        var url = `{{ route('paper.rollback', ['id' => ':id']) }}`;
+        url = url.replace(':id', id);
+        form.action = url;
+    }
+
+    function change_url_step(id, elementid, stage){
+        var form = document.getElementById(elementid);
+        var url = `{{ route('paper.store.file.stages', ['id' => ':id', 'stage' => ':stage']) }}`;
+        url = url.replace(':id', id);
+        url = url.replace(':stage', stage);
+        form.action = url;
+    }
+
+</script>
+@endpush

@@ -1,0 +1,157 @@
+/* Background style */
+.background {
+    width: 100%;
+    height: 100vh;
+    background: url("../assets/login-frame.png") no-repeat center center;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+/* Tombol kembali dengan ikon panah di dalam frame login */
+.btn-icon-back {
+    position: absolute;
+    top: 10px; /* Jarak dari atas frame login */
+    left: 10px; /* Jarak dari kiri frame login */
+    font-size: 24px; /* Ukuran ikon */
+    color: #ffffff; /* Warna ikon */
+    text-decoration: none; /* Menghapus garis bawah pada link */
+    transition: color 0.3s ease;
+    z-index: 1000; /* Pastikan tombol di atas elemen lain */
+}
+
+.btn-icon-back:hover {
+    color: rgba(255, 255, 255, 0.7); /* Warna ikon saat hover */
+}
+
+/* Login form container */
+.login-form-container {
+    background-color: rgba(89, 89, 89, 0.381); /* Latar belakang hitam transparan untuk container form */
+    border-radius: 8px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.5); /* Efek timbul */
+    padding: 20px;
+    max-width: 600px; /* Lebar maksimum form */
+    width: 100%; /* Lebar penuh dari container */
+    margin: 200px auto 0; /* Meningkatkan margin atas untuk menggeser form lebih kebawah */
+    display: flex;
+    flex-direction: column; /* Tata letak vertikal untuk form */
+    align-items: flex-start; /* Memastikan konten termasuk tombol berada di kiri */
+    justify-content: center;
+    position: relative; /* Untuk memastikan posisi tombol relatif terhadap container login */
+}
+
+@media (max-width: 768px) {
+    .login-form-container {
+        max-width: 90%; /* Lebar maksimum pada perangkat kecil */
+        margin: 250px auto 0; /* Menyesuaikan margin atas pada perangkat kecil */
+    }
+}
+
+#title {
+    font-size: 2rem; /* Ukuran font title */
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+#subtitle {
+    font-size: 1rem; /* Ukuran font subtitle */
+    font-weight: 200;
+    color: #fff;
+    margin-bottom: 20px; /* Jarak antara subtitle dan form */
+}
+
+#forForm {
+    width: 100%; /* Menggunakan lebar penuh dari container */
+}
+
+.form-group {
+    margin-bottom: 1rem; /* Jarak antara elemen form */
+    width: 100%;
+}
+
+.emailInput {
+    text-decoration: none;
+    outline: none;
+    height: 2.5rem; /* Menyesuaikan tinggi input */
+    width: 100%; /* Lebar penuh input */
+    font-size: small;
+    font-weight: 300;
+    border: 1px solid #ffffff; /* Mengubah border menjadi warna abu muda untuk kontras */
+    border-radius: 20px;
+    padding: 0 10px;
+    background-color: #ffffff; /* Mengubah warna latar belakang input menjadi putih */
+    color: #000; /* Warna teks hitam */
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.emailLabel {
+    display: block;
+    color: #ffffff;
+    font-size: small;
+    font-weight: 300;
+    margin-bottom: 0.25rem; /* Jarak antara label dan input */
+}
+
+.submitButtonLogin {
+    margin-top: 15px; /* Jarak antara form dan tombol */
+}
+
+.submitButtonLogin button {
+    display: inline-block;
+    padding: 10px 20px; /* Menyesuaikan padding untuk tombol */
+    font-size: 14px; /* Ukuran font tombol */
+    border-radius: 50px;
+    background-color: rgba(212, 3, 3, 0.778); /* Background transparan putih */
+    border: 1px solid #000000;
+    color: #ffffff;
+    transition: background-color 0.3s ease;
+    text-align: center;
+}
+
+.submitButtonLogin button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Styling untuk tombol Kembali yang konsisten dengan tombol Login */
+.btn-outline-secondary {
+    display: inline-block;
+    padding: 10px 20px; /* Padding tombol */
+    font-size: 14px; /* Ukuran font tombol */
+    border-radius: 50px; /* Sudut membulat */
+    background-color: rgba(212, 3, 3, 0.778); /* Background transparan putih */
+    border: 1px solid #000000; /* Border putih */
+    color: #fff; /* Warna teks putih */
+    transition: background-color 0.3s ease; /* Transisi latar belakang */
+    text-align: center;
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.3); /* Latar belakang saat hover */
+    color: #fff; /* Warna teks saat hover */
+}
+
+.errormessage {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    color: #f8d7da; /* Warna merah untuk pesan error */
+}
+
+.text-center {
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+    .login-form-container {
+        max-width: 90%; /* Lebar maksimum pada perangkat kecil */
+    }
+
+    #title {
+        font-size: 1.75rem; /* Mengurangi ukuran font title pada perangkat kecil */
+    }
+
+    #subtitle {
+        font-size: 0.75rem; /* Mengurangi ukuran font subtitle pada perangkat kecil */
+    }
+}

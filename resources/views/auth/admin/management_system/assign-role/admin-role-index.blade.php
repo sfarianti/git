@@ -1,0 +1,160 @@
+@extends('layouts.app')
+@section('title', 'Role | Admin')
+@push('css')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+<style type="text/css">
+    .active-link {
+        color: #ffc004;
+        background-color: #e81500;
+    }
+    .select2-dropdown {
+        z-index: 1001; /* Sesuaikan dengan z-index modal atau nilai yang sesuai */
+    }
+    .display thead th,
+    .display tbody td {
+        border: 0.5px solid #ddd; /* Atur warna dan ketebalan garis sesuai kebutuhan */
+    }
+</style>
+@endpush
+@section('content')
+    <header class="page-header page-header-compact page-header-light border-bottom bg-white mb-4">
+        <div class="container-xl px-4">
+            <div class="page-header-content">
+                <div class="row align-items-center justify-content-between pt-3">
+                    <div class="col-auto mb-3">
+                        <h1 class="page-header-title">
+                            <div class="page-header-icon"><i data-feather="book"></i></div>
+                            Data Admin
+                        </h1>
+                    </div>
+                     <div class="col-12 col-xl-auto mb-3">
+                        <a class="btn btn-sm btn-light text-primary" href="{{ route('management-system.role.index') }}">
+                            <i class="me-1" data-feather="arrow-left"></i>
+                            Kembali
+                        </a>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Main page content-->
+    <div class="container-xl px-4 mt-4">
+        <div class="mb-3">
+            @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+                {{ session('success') }}
+
+                <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                {{-- <div class="mb-3">
+                    @if (Auth::user()->role == 'Admin')
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#filterModal">Filter</button>
+                    @endif
+                </div> --}}
+                <table id="datatable-innovator">
+                    
+                </table>
+            </div>
+            
+        </div>
+    </div>
+
+@endsection
+
+@push('js')
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.2/classic/ckeditor.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script type="">
+$(document).ready(function() {
+    var dataTable = $('#datatable-innovator').DataTable({
+        "processing": true,
+        "serverSide": true, // baruSince data is fetched by Ajax, set to false
+        "ajax": {
+            "url": '{{ route('query.get_role') }}',
+            "type": "GET",
+            "dataType": "json",
+            "dataSrc": function (data) {
+                // console.log('Jumlah data total: ' + data.recordsTotal);
+                // console.log('Jumlah data setelah filter: ' + data.recordsFiltered);
+                // console.log('Jumlah data setelah filter: ' + data.data);
+                return data.data;
+            },
+            "data": function (d) {
+                    //d.role = 'Admin'
+                    d.company_code = '{{ Auth::user()->company_code }}'; // sending logged-in user's company code
+                    d.role = '{{ Auth::user()->role }}';
+            },
+            
+        },
+        "columns": [
+            {"data": "DT_RowIndex", "title": "No"},
+            {"data": "name", "title": "Name"},
+            {"data": "co_name", "title": "Perusahaan"},
+            {"data": "position_title", "title": "Posisi"},
+            {"data": "job_level", "title": "Job Level"}
+        ],
+        "scrollY": true,
+        "scrollX": false,
+        "stateSave": true,
+    });
+});
+document.addEventListener("DOMContentLoaded", function() {
+    var selectElements = document.querySelectorAll('select');
+    selectElements.forEach(function(select) {
+        
+    });
+    search_select2('id_juri')
+});
+
+
+// fungsi select2 untuk opsi yang membutuhkan data karyawan (fasilitator, leader, anggota)
+function search_select2(select_element_id) {
+
+    $('#' + select_element_id).select2({
+        // allowClear: true,
+        // theme: "classic",
+        allowClear: true,
+        width: "100%",
+        placeholder: "Pilih " + select_element_id.split("_")[1] + (select_element_id.split("_")[2] ? " " +
+            select_element_id.split("_")[2] + " : " : " : "),
+        ajax: {
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'POST', // Metode HTTP POST
+            url: '{{ route('query.autocomplete') }}',
+            dataType: 'json',
+            delay: 250, // Penundaan dalam milidetik sebelum permintaan AJAX dikirim
+            data: function(params) {
+                // Data yang akan dikirim dalam permintaan POST
+                return {
+                    query: params.term // Menggunakan nilai input "query" sebagai parameter
+                };
+            },
+            processResults: function(data) {
+                // Memformat data yang diterima untuk format yang sesuai dengan Select2
+                return {
+                    results: $.map(data, function(item) {
+                        return {
+                            text: item.employee_id + ' - ' + item
+                                .name, // Nama yang akan ditampilkan di kotak seleksi
+                            id: item.employee_id // Nilai yang akan dikirimkan saat opsi dipilih
+                        };
+                    })
+                };
+            },
+            cache: true
+        }
+    });
+}
+
+</script>
+@endpush

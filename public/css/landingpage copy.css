@@ -1,0 +1,148 @@
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    /* background-color: darkslateblue; */
+}
+
+.debug {
+    border: 1px solid red;
+}
+
+.sticky-to-the-top {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+}
+
+.navbrand-set {
+    display: flex;
+    align-items: center;
+}
+
+li.nav-item {
+    margin: 0 0.75em;
+}
+
+.text-color-main {
+    color: #a4262c !important;
+    transition: 0.3s ease;
+}
+.text-color-main:focus,
+.text-color-main:active {
+    color: #a4262c !important;
+    font-weight: bold;
+}
+
+.login-button {
+    border: none !important;
+    border-radius: 0.5em;
+    background-color: #cc353c;
+    transition: 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: #f23e47;
+    transition: 0.3s ease;
+}
+
+.login-button:active {
+    background-color: #7f2125;
+}
+
+main img {
+    width: 100vw;
+}
+
+.pendaftaran-text-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: fit-content;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.color-main {
+    color: #7f2125;
+}
+
+.custom-hr {
+    height: 5px;
+    width: 100%;
+    background-color: #7f2125;
+}
+
+.pendaftaran-image {
+}
+.carousel-img-size {
+    max-width: 10%;
+}
+
+#info,
+#company {
+}
+
+.padding-for-content-from-navbar {
+    height: 10vh;
+    width: 100vw;
+}
+.bg {
+max-height: 90%;
+position: absolute;
+}
+
+.infography {
+    height: 90%;
+    display: flex;
+    justify-content: space-between;
+
+    position: relative;
+}
+
+.info-left,
+.info-center,
+.info-right {
+    max-height: 100%;
+}
+
+#info-image {
+    width: 22.5%;
+}
+
+.info-button {
+    max-width: 20%;
+}
+
+@media (min-width: 576) {
+    .section-margin {
+        margin-top: 10vh;
+    }
+}
+@media (min-width: 768px) {
+    .custom-font {
+        font-size: 18px; /* Set the desired font size for medium screens */
+    }
+}
+@media (min-width: 992px) {
+    .custom-font {
+        font-size: 18px; /* Set the desired font size for medium screens */
+    }
+}
+@media (min-width: 1200px) {
+    .custom-font {
+        font-size: 18px; /* Set the desired font size for medium screens */
+    }
+}
+@media (min-width: 1400px) {
+    .custom-font {
+        font-size: 18px; /* Set the desired font size for medium screens */
+    }
+}

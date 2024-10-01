@@ -1,0 +1,25 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-size: 100% 100%;
+}
+footer {
+    background-color: var(--bs-red-soft);
+    opacity: 90%;
+}
+
+.sidebar-rounded {
+    border-radius: 0 0 0.75em 0;
+}
+
+.borderless-searchbar,
+.borderless-searchbar:focus,
+.borderless-searchbar:focus-visible {
+    height: 2em;
+    width: 20vw;
+    border: none !important;
+    background-color: transparent;
+}

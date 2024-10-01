@@ -1,0 +1,108 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container{
+    background: rgb(255, 33, 92);
+}
+
+.navbar {
+    /* nav props */
+    height: 10vh;
+    width: 100vw;
+    background-color: rgb(231, 231, 231);
+    box-shadow: grey 0 4px 8px 0;
+    
+    /* nav characteristic */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    /* nav position */
+    position: fixed;
+    top: 0;
+}
+
+.nav-left{
+    /* navleft props */
+    
+
+    margin: 1%;
+
+
+    /* for navleft element */
+    display: flex;
+    align-items: center;
+}
+
+.nav-mid{
+    /* navmid props */
+    /* border: 1px solid; */
+    width: 50vw;
+    min-width: 30%;
+
+    /* for navmid element */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.nav-right{
+    /* navright props */
+    /* max-width: 25%; */
+    /* width: 15vw; */
+    /* border: 1px solid; */
+    
+    margin: 1%;
+
+
+    /* for navright element */
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+}
+
+
+/* nav-elements */
+
+#sig-logo{
+    width: 82.5%;
+}
+
+#navbar-search{
+    margin-top: 10px;
+
+    /* searchbar props */
+    width: 30vw;
+    min-width: 20vw;
+    height: 1.5rem;
+
+    /* searchbar style */
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: grey 2px 2px 5px;
+    font-size: 14px;
+}
+
+#user-name, #user-id{
+    font-size: .825rem;
+    text-align: end;
+}
+
+#exit-button{
+    font-size: .825rem;
+    font-style: italic;
+
+    width: 3rem;
+
+    border-radius: 10px;
+}
+
+#exit-button:hover{
+    background-color: #f4313f;
+    color: azure;
+}

@@ -1,0 +1,21 @@
+.bgRegister {
+    background-size: 100% 100%;
+    background-image: url("../assets/dashboard-background/bg-200.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.marginForSelect2Anggota{
+    margin: 10px 0;
+}
+
+
+.debug{
+    border: 1px solid red;
+}
+
+.max-height-for-forms{
+    display: block;
+    height: 50px;
+}

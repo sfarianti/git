@@ -1,0 +1,5 @@
+./web_api/pgsql
+.env
+vendor
+node_modules
+storage

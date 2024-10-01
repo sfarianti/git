@@ -1,0 +1,37 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar {
+    width: 15vw;
+
+    position: fixed;
+    top: 25vh;
+}
+
+.button:active,
+.button:focus {
+    background-color: #f4314f;
+    color: azure;
+}
+.button {
+    /* for centering button title */
+    display: flex;
+    align-items: center;
+
+    /* button props */
+    width: 100%;
+    background-color: #cccccc;
+    margin: 5px 0;
+    padding: 20px;
+    border-radius: 0 10px 10px 0;
+
+    /* title props */
+    font-size: 1rem;
+    font-weight: 300;
+    text-align: start;
+}
