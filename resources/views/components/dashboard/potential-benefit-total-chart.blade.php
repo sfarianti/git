@@ -7,8 +7,9 @@
     </div>
 </div>
 
-@vite(['resources/js/totalBenefitChart.js'])
 
 <script>
     const chartDataTotalPotentialBenefit = @json($chartDataTotalPotentialBenefit);
 </script>
+
+<script src="{{ asset('/build/assets/totalBenefitChart-5f117818.js') }}" type="module"></script>

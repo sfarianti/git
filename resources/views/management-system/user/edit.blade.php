@@ -52,6 +52,14 @@
                                 <input type="text" name="position_title" class="form-control" value="{{ $user->position_title }}">
                             </div>
                             <div class="form-group">
+                                <label>Job Level</label>
+                                <input type="text" name="job_level" class="form-control" value="{{ $user->job_level }}">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Atasan</label>
+                                <input type="text" name="manager_id" class="form-control" value="{{ $user->manager_id }}">
+                            </div>
+                            <div class="form-group">
                                 <label>Kode Perusahaan</label>
                                 <input type="text" name="company_code" class="form-control" value="{{ $user->company_code }}">
                             </div>
@@ -59,6 +67,12 @@
                                 <label>Nama Perusahaan</label>
                                 <input type="text" name="company_name" class="form-control" value="{{ $user->company_name }}">
                             </div>
+                            <div class="form-group">
+                                <label>Perusahaan Asal</label>
+                                <input type="text" name="home_company" class="form-control" value="{{ $user->home_company }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Nama Direktorat</label>
                                 <input type="text" name="directorate_name" class="form-control" value="{{ $user->directorate_name }}">
@@ -83,12 +97,6 @@
                                 <label>Sub Seksi</label>
                                 <input type="text" name="sub_section_of" class="form-control" value="{{ $user->sub_section_of }}">
                             </div>
-                            <div class="form-group">
-                                <label>Job Level</label>
-                                <input type="text" name="job_level" class="form-control" value="{{ $user->job_level }}">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Password (kosongkan untuk mempertahankan password lama)</label>
                                 <input type="password" name="password" class="form-control">

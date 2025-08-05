@@ -15,7 +15,7 @@
                     <div class="col-auto mb-3">
                         <h1 class="page-header-title">
                             <div class="page-header-icon"><i data-feather="book"></i></div>
-                            List Team | Event {{ $event->event_name }}
+                            List Team | Event {{ $event->event_name . ' Tahun ' . $event->year }}
                         </h1>
                     </div>
                     <div class="col-auto mb-3">
@@ -30,16 +30,27 @@
     </header>
     <div class="container-xl px-4 ">
         <div class="card mb-4">
-            <div class="card-header text-white" style="background-color: #e94838;">List of Teams</div>
+            <div class="card-header text-white d-flex justify-content-between" style="background-color: #e94838;">
+                <div>List of Teams</div>
+                @if(Auth::user()->role == 'Admin' || Auth::user()->role == 'Superadmin')
+                <div>
+                    <a href="{{ route('event-team.download.excel', ['eventId' => $event->id]) }}" class="btn btn-sm btn-light">
+                        Download Excel
+                    </a>
+                </div>
+            @endif
+
+            </div>
             <div class="card-body">
                 <table id="datatablesSimple" class="table table-striped">
                     <thead>
                         <tr>
+                            <th>No</th>
                             <th>Team</th>
                             <th>Judul Inovasi</th>
                             <th>Perusahaan</th>
                             @if (Auth::user()->role === 'Superadmin')
-                                <th>Status Lolos</th>
+                                <th>Status Inovasi</th>
                                 <th>Status Full Paper</th>
                             @endif
                             <th>Action</th>
@@ -124,25 +135,39 @@
         <script>
             $(document).ready(function() {
                 var columns = [{
+                        data: null,
+                        name: 'rownum',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    {
                         data: 'team_name',
                         render: function(data, type, row) {
                             let html = data;
-                            if (row.is_user_team) {
-                                const roleClasses = {
-                                    'member': 'badge-member',
-                                    'leader': 'badge-leader',
-                                    'facilitator': 'badge-facilitator',
-                                    'gm': 'badge-gm'
-                                };
-                                const roleLabels = {
-                                    'member': 'Member',
-                                    'leader': 'Leader',
-                                    'facilitator': 'Facilitator',
-                                    'gm': 'GM'
-                                };
-                                html +=
-                                    `<span class="team-badge ${roleClasses[row.user_role]}">${roleLabels[row.user_role]}</span>`;
+                            const roleClasses = {
+                                'member': 'badge-member',
+                                'leader': 'badge-leader',
+                                'facilitator': 'badge-facilitator',
+                                'gm': 'badge-gm'
+                            };
+                            
+                            const roleLabels = {
+                                'member': 'Member',
+                                'leader': 'Leader',
+                                'facilitator': 'Facilitator',
+                                'gm': 'GM'
+                            };
+                            
+                            // Misalnya dari backend atau JS global, misal window.currentUserRole
+                            if (row.is_user_team || ['judge', 'superadmin'].includes(currentUserRole)) {
+                                if (roleClasses[row.user_role]) {
+                                    html += `<span class="team-badge ${roleClasses[row.user_role]}">${roleLabels[row.user_role]}</span>`;
+                                }
                             }
+
                             return html;
                         }
                     },
@@ -159,14 +184,15 @@
                 // Add status column if user is superadmin
                 @if (Auth::user()->role === 'Superadmin')
                     columns.push({
-                        data: 'status_lolos',
+                        data: 'status_inovasi',
                         render: function(data, type, row) {
                             if (!data && !row.has_full_paper) {
+                                console.log('Status Lolos:', data, 'Has Full Paper:', row.has_full_paper);
                                 return '<span class="badge bg-danger">Belum di verifikasi</span>';
                             } else {
                                 return data ?
-                                    '<span class="badge bg-success">Masuk Grup</span>' :
-                                    '<span class="badge bg-danger">Belum Terverifikasi oleh Superadmin</span>';
+                                    '<span class="badge bg-success">Inovasi Sudah Terverivikasi</span>' :
+                                    '<span class="badge bg-danger">Inovasi Belum Terverifikasi</span>';
                             }
                         }
                     });
@@ -195,12 +221,12 @@
                                 row.event_type !== 'AP')) {
                             // Tidak perlu menampilkan tombol jika event_type adalah 'AP'
                             if (row.event_type !== 'AP') {
-                                buttons += ` <a href="${row.edit_url}" class="btn btn-warning btn-sm ms-1">
+                                buttons += ` <a href="${row.event_status == 'finish' ? '#' : row.edit_url}" class="btn btn-warning btn-sm ms-1 ${row.event_status == 'finish' ? 'disabled' : ''}">
                                 <i class="fas fa-edit"></i> Edit Paper ${row.event_type}
                             </a>`;
                             }
-                            buttons += `<a href="${row.edit_benefit_url}"
-                                class="btn btn-info btn-sm ms-1"
+                            buttons += `<a href="${row.event_status == 'finish' ? '#' : row.edit_url}"
+                                class="btn btn-info btn-sm ms-1 ${row.event_status == 'finish' ? 'disabled' : ''}"
                                 data-bs-toggle="tooltip" title="Edit Team Benefits">
                                 <i class="fas fa-chart-line"></i> Edit Benefit
                             </a>`;

@@ -39,6 +39,7 @@ class EvidenceController extends Controller
 
         // Ambil tim berdasarkan team_id
         $papers = DB::table('teams')
+            // ->join('papers', 'teams.id', '=', 'papers.team_id')
             ->leftJoin('pvt_event_teams', 'teams.id', '=', 'pvt_event_teams.team_id')
             ->leftJoin('papers', 'teams.id', '=', 'papers.team_id')
             ->leftJoin('events', 'pvt_event_teams.event_id', '=', 'events.id')
@@ -69,8 +70,21 @@ class EvidenceController extends Controller
 
         // mendapatkan data member berdasarkan id team
         $teamMember = $team->pvtMembers()->with('user')->get();
+        
+        $outsourceMember = DB::table('ph2_members')
+            ->where('team_id', $teamId)
+            ->get()
+            ->toArray();
 
-        return view('auth.admin.dokumentasi.evidence.detail-team', compact('teamMember', 'papers', 'teamId'));
+        return view('auth.admin.dokumentasi.evidence.detail-team', compact(
+            'teamMember', 
+            'papers', 
+            'teamId', 
+            'team',
+            'outsourceMember',
+            'paper'
+
+        ));
     }
 
     public function download($id)

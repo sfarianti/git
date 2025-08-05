@@ -14,6 +14,9 @@ class Certificate extends Model
     protected $fillable = [
         'event_id',
         'template_path',
+        'badge_rank_1',
+        'badge_rank_2',
+        'badge_rank_3'
     ];
 
     // Relasi ke tabel Event

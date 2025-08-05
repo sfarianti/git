@@ -44,34 +44,58 @@ class TotalInnovatorByOrganizationCharts extends Component
         $companyCode = $company->company_code;
         $this->company_name = $company->company_name;
 
+        if (in_array($companyCode, [2000, 7000])) {
+            $filteredCompany = [2000, 7000];
+        } else {
+            $filteredCompany = [$companyCode];
+        }
+        
         // Ambil data total inovator
-        $this->chartData = Team::select(
-            DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit}) as organization_unit"),
-            DB::raw('EXTRACT(YEAR FROM papers.created_at) as year'),
-            DB::raw('COUNT(DISTINCT pvt_members.employee_id) as total_innovators')
-        )
-            ->join('pvt_members', function ($join) {
-                $join->on('teams.id', '=', 'pvt_members.team_id')
-                    ->whereIn('pvt_members.status', ['leader', 'member']);
-            })
+        $pvtQuery = DB::table('teams')
+            ->select(
+                DB::raw("COALESCE(NULLIF(users.{$this->organizationUnit}, ''), 'Lainnya') as organization_unit"),
+                DB::raw('EXTRACT(YEAR FROM events.year) as year'),
+                DB::raw('COUNT(DISTINCT CONCAT(pvt_members.employee_id, teams.id)) as total_innovators')
+            )
+            ->join('pvt_members', 'teams.id', '=', 'pvt_members.team_id')
             ->join('users', 'pvt_members.employee_id', '=', 'users.employee_id')
-            ->leftJoin('user_hierarchy_histories', function ($join) {
-                $join->on('user_hierarchy_histories.user_id', '=', 'users.id')
-                    ->whereRaw('teams.created_at >= COALESCE(user_hierarchy_histories.effective_start_date, teams.created_at)')
-                    ->whereRaw('teams.created_at <= COALESCE(user_hierarchy_histories.effective_end_date, teams.created_at)');
-            })
             ->join('papers', function ($join) {
                 $join->on('teams.id', '=', 'papers.team_id')
                     ->where('papers.status', 'accepted by innovation admin');
             })
-            ->where('users.company_code', $companyCode)
-            ->whereYear('papers.created_at', $this->year)
-            ->groupBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"), DB::raw('EXTRACT(YEAR FROM papers.created_at)'))
-            ->orderBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"))
+            ->join('pvt_event_teams', 'pvt_event_teams.team_id', '=', 'teams.id')
+            ->join('events', 'events.id', '=', 'pvt_event_teams.event_id')
+            ->whereIn('teams.company_code', $filteredCompany)
+            ->whereYear('events.year', $this->year)
+            ->where('pvt_members.status', '!=', 'gm')
+            ->groupBy('organization_unit', 'year');
+        
+        $ph2Query = DB::table('teams')
+            ->select(
+                DB::raw("'Outsource' as organization_unit"),
+                DB::raw('EXTRACT(YEAR FROM events.year) as year'),
+                DB::raw('COUNT(DISTINCT CONCAT(ph2_members.name, teams.id)) as total_innovators')
+            )
+            ->join('ph2_members', 'teams.id', '=', 'ph2_members.team_id')
+            ->join('papers', function ($join) {
+                $join->on('teams.id', '=', 'papers.team_id')
+                    ->where('papers.status', 'accepted by innovation admin');
+            })
+            ->join('pvt_event_teams', 'pvt_event_teams.team_id', '=', 'teams.id')
+            ->join('events', 'events.id', '=', 'pvt_event_teams.event_id')
+            ->whereIn('teams.company_code', $filteredCompany)
+            ->whereYear('events.year', $this->year)
+            ->groupBy('organization_unit', 'year');
+        
+        $this->chartData = $pvtQuery->unionAll($ph2Query)
             ->get()
             ->groupBy('organization_unit')
+            ->sortByDesc(function ($group) {
+                // Total semua innovator dari group ini (semua tahun)
+                return $group->sum('total_innovators');
+            })
             ->map(function ($data) {
-                return $data->keyBy('year')->map(fn($item) => $item->total_innovators);
+                return $data->keyBy('year')->map(fn($item) => (int)$item->total_innovators);
             });
     }
 

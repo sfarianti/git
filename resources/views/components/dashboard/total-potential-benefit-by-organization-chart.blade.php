@@ -13,7 +13,7 @@
 
         {{ $labels[$organizationUnit] ?? 'Unit Organisasi' }}
     </h2>
-    <canvas id="totalPotentialChart" style="width: 100%; max-height: 20rem;"></canvas>
+    <canvas id="totalPotentialChart" style="width: 100%;"></canvas>
     <div class="mt-3 text-end">
         <button class="btn btn-sm btn-success export-excel-totalPotentialBenefitByOrganizationChart">Export to Excel</button>
         <button class="btn btn-sm btn-danger export-pdf-totalPotentialBenefitByOrganizationChart">Export to PDF</button>
@@ -23,16 +23,19 @@
 @vite(['resources/js/totalPotentialBenefitByOrganizationChart.js'])
 
 <script type="module">
-    import {
-        initializeTotalPotentialChart
-    } from "{{ Vite::asset('resources/js/totalPotentialBenefitByOrganizationChart.js') }}";
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartData = @json($chartData); // Kirim data ke JavaScript
+        const company_name = @json($company_name);
+        
+        window.chartData = chartData; // Store chart data globally
+        window.company_name = company_name; // Store company name globally
 
-    const chartData = @json($chartData); // Kirim data ke JavaScript
-    const organizationUnitLabel = @json($labels[$organizationUnit] ?? 'Unit Organisasi');
-    const company_name = @json($company_name);
-    window.chartData = chartData; // Store chart data globally
-    window.organizationUnitLabel = organizationUnitLabel; // Store organization unit label globally
-    window.company_name = company_name; // Store company name globally
-    initializeTotalPotentialChart(chartData); // Panggil fungsi dari file JS
+        // Kalau kamu ingin langsung render dari sini (optional):
+        if (typeof window.initializeTotalPotentialChart === 'function') {
+            window.initializeTotalPotentialChart(chartData);
+        }
+    });
 </script>
-@vite(['resources/js/exportTotalPotentialBenefitByOrganizationChart.js'])
+
+<script type="module" src="{{ asset('build/assets/totalPotentialBenefitByOrganizationChart-0ac2bbcd.js') }}"></script>
+<script type="module" src="{{ asset('build/assets/exportTotalPotentialBenefitByOrganizationChart-f7299526.js') }}"></script>

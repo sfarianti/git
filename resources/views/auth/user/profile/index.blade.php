@@ -1,6 +1,6 @@
 <style>
     .btn-download {
-        width: 75%;
+        width: 50%;
     }
 
     .btn-form {
@@ -8,6 +8,7 @@
         text-align: center;
     }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
 @extends('layouts.app')
 @section('title', 'Profil')
@@ -20,43 +21,70 @@
                     <div class="col-auto mb-3 ">
                         <h1 class="page-header-title">
                             <div class="page-header-icon"><i data-feather="user"></i></div>
-                            Profil
+                            Profil Pengguna
                         </h1>
                     </div>
                 </div>
             </div>
         </div>
     </header>
+    
+    <div class="mb-3">
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+                {{ session('success') }}
+                <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+    </div>
 
     <div class="container mt-4">
         <div class="row justify-content-around">
             <!-- Bagian Profil -->
             <div class="col-md-6 col-sm-10 col-xs-12">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header text-center bg-gradient-primary text-white">
-                        <h5 class="mb-0 text-white">Profil Anda</h5>
+                    <div class="card-header bg-primary bg-gradient d-flex justify-content-between">
+                        <h5 class="mb-0 text-white text-center">Profil Anda</h5>
+                        <div>
+                            <button class="text-end btn btn-sm btn-danger d-none" id="btnCancelEditProfile">Batal</button>
+                            <button class="text-end btn btn-sm btn-secondary" id="btnEditProfile">Edit Poto Profile</button>
+                        </div>
                     </div>
                     <div class="card-body text-center">
-                        <img src="{{ asset('images/default-profile.png') }}" alt="Foto Profil" class="img-thumbnail mb-3"
-                            style="width: 100px; height: 100px;">
+                        <div style="max-width: 100px; height: auto;" class="text-center w-100 mx-auto">
+                            <img src="{{ route('query.getFile') }}?directory={{ urlencode($profilePicture) }}" alt="Foto Profil" class="rounded mx-auto d-block mb-3"
+                                style="max-width: 100%; height: auto;">
+                        </div>
+                        <form id="updatePhotoProfile" method="POST" class="d-none" action="{{ route('profile.updateProfilePicture', ['employeeId' => $user->employee_id]) }}" enctype="multipart/form-data">
+                            @csrf
+                            @method('PUT')
+                            
+                            <input type="file" class="form-control w-50 mx-auto" name="photo_profile" required accept=".jpg,.png,.jpeg" />
+                        </form>
                         <h5 class="card-title">{{ $user->name }}</h5>
                         <p class="card-text"><strong>Posisi:</strong> {{ $user->position_title }}</p>
                         <p class="card-text"><strong>Perusahaan:</strong> {{ $user->company_name }}</p>
                     </div>
-                    @if (Auth::user()->role == 'Juri' && $isActiveJudge)
-                        <form class="btn-form p-3" action="{{ route('cv.generateCertificate') }}" method="POST">
-                            @csrf
-                            {{-- Input for Certificate Auto Create --}}
-                            <input type="hidden" name="inovasi" value="{{ json_encode($judgeEvents) }}">
-                            <input type="hidden" name="employee" value="{{ json_encode($user) }}">
-                            <input type="hidden" name="team_rank" value="{{ json_encode($teamRanks) }}">
-                            <input type="hidden" name="certificate_type" value="team">
-
-                            <button type="submit" class="btn btn-sm btn-download btn-success mx-5">
-                                <i class="dropdown-item-icon mb-1 me-2 fs-2" data-feather="download"></i>
-                                Download Sertifikat Juri
+                    @if (Auth::user()->role == 'Juri' && $isActiveJudge && $judgeEvents->count())
+                        <div class="dropdown btn-form py-2">
+                            <button class="btn btn-download btn-sm btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                Lihat Sertifikat Juri
                             </button>
-                        </form>
+                            <ul class="dropdown-menu">
+                                @foreach ($judgeEvents as $event)
+                                    <li>
+                                        <form action="{{ route('cv.generateCertificate') }}" method="POST" class="px-3 py-2">
+                                            @csrf
+                                            <input type="hidden" name="event_id" value="{{ $event->event_id }}">
+                                            <input type="hidden" name="employee" value="{{ $user }}">
+                                            <button type="submit" class="btn btn-sm btn-link text-start w-100">
+                                                {{ $event->event_name . ' Tahun ' . $event->year }}
+                                            </button>
+                                        </form>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                     @endif
                 </div>
                 <x-profile.list-paper :teamIds="$teamIds" />
@@ -76,7 +104,7 @@
             <div class="col-xl-12">
                 <!-- Account details card-->
                 <div class="card mb-4">
-                    <div class="card-header">Detail Pengguna</div>
+                    <div class="card-header bg-primary bg-gradient text-white">Detail Pengguna</div>
                     <div class="card-body">
                         <form>
                             <!-- Form Group (email address)-->
@@ -147,9 +175,101 @@
                                 <input class="form-control" id="dataManager" value="{{ $manager }}" disabled />
                             </div>
                         </form>
+                        <form id="changePassword" action="{{ route('profile.updatePassword', ['employeeId' => $userId]) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="mb-3 position-relative">
+                                <label class="small mb-1">Input Password</label>
+                                <input 
+                                    id="passwordInput" 
+                                    type="password" 
+                                    name="password" 
+                                    class="form-control pe-5" 
+                                    placeholder="Inputkan Password Baru"
+                                    readonly
+                                />
+                                <span 
+                                    class="position-absolute top-50 end-0 translate-middle-y mt-2 me-3" 
+                                    style="cursor: pointer;" 
+                                    id="togglePassword"
+                                >
+                                    <i class="bi bi-eye-slash-fill fs-1 d-none" id="togglePasswordIcon"></i>
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <button type="button" id="toggleInput" class="btn btn-sm btn-danger">Edit Password</button>
+                                <button type="submit" id="submitButton" class="btn btn-sm btn-primary" disabled>Simpan Password</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleBtn = document.getElementById('toggleInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const submitBtn = document.getElementById('submitButton');
+            const icon = document.getElementById('togglePasswordIcon');
+        
+            toggleBtn.addEventListener('click', function () {
+                const isReadonly = passwordInput.hasAttribute('readonly');
+        
+                if (isReadonly) {
+                    passwordInput.removeAttribute('readonly');
+                    passwordInput.focus();
+                    toggleBtn.textContent = 'Kunci Password';
+                    icon.classList.remove('d-none');
+                    submitBtn.disabled = false;
+                } else {
+                    passwordInput.setAttribute('readonly', true);
+                    toggleBtn.textContent = 'Edit Password';
+                    icon.classList.add('d-none');
+                    submitBtn.disabled = true;
+                }
+            });
+            
+            const toggle = document.getElementById('togglePassword');
+            const input = document.getElementById('passwordInput');
+            
+            toggle.addEventListener('click', function () {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                icon.className = isPassword ? 'fs-1 bi bi-eye-fill' : 'fs-1 bi bi-eye-slash-fill';
+            });
+            
+            const btnEditPhotoProfile = document.getElementById('btnEditProfile');
+            const formUpdatePhotoProfile = document.getElementById('updatePhotoProfile');
+            const cancelEditPhotoProfile = document.getElementById('btnCancelEditProfile');
+            
+            btnEditPhotoProfile.addEventListener('click', function () {
+                const isHidden = formUpdatePhotoProfile.classList.contains('d-none');
+            
+                if (isHidden) {
+                    formUpdatePhotoProfile.classList.remove('d-none');
+                    cancelEditPhotoProfile.classList.remove('d-none');
+                    btnEditPhotoProfile.textContent = 'Simpan Foto Profile';
+                } else {
+                    
+                    if (!formUpdatePhotoProfile.querySelector('input[type="file"]').files.length) {
+                        alert('Silakan pilih file terlebih dahulu.');
+                        return;
+                    }
+
+                    formUpdatePhotoProfile.submit();
+                    btnEditPhotoProfile.textContent = 'Edit Foto Profile';
+                    formUpdatePhotoProfile.classList.add('d-none');
+                    cancelEditPhotoProfile.classList.add('d-none');
+                }
+            });
+            
+            cancelEditPhotoProfile.addEventListener('click', function () {
+                formUpdatePhotoProfile.classList.add('d-none');
+                cancelEditPhotoProfile.classList.add('d-none');
+                btnEditPhotoProfile.textContent = 'Edit Foto Profile';
+            });
+        });
+    </script>
 @endsection

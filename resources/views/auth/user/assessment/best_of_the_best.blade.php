@@ -64,7 +64,7 @@
     <!-- Main page content-->
     <div class="container-xl px-4 mt-4">
         {{-- Component Navigation Bar Assessment --}}
-        @include('components.assessment.navbar')
+        @include('auth.user.paper.navbar')
         
         <div class="mb-3">
             @if (session('success'))
@@ -159,7 +159,6 @@
                     <!-- Modal Footer -->
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                        <button type="button" class="btn btn-primary">Terapkan Filter</button>
                     </div>
                 </div>
             </div>

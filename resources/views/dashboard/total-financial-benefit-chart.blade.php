@@ -22,8 +22,9 @@
     </div>
 @endsection
 
-@vite(['resources/js/totalBenefitChart.js'])
 
 <script>
     const chartDataTotalBenefit = @json($chartDataTotalBenefit);
 </script>
+
+<script src="{{ asset('/build/assets/totalBenefitChart-5f117818.js') }}" type="module"></script>

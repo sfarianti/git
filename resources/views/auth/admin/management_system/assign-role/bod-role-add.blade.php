@@ -97,30 +97,18 @@
         // fungsi yang dijalankan ketika dom sudah terload
         // akan menginisasi semua select field agar menggunakkan library select2
         document.addEventListener("DOMContentLoaded", function() {
-            var selectElements = document.querySelectorAll('select');
-            selectElements.forEach(function(select) {
-
-            });
-            search_select2('id_bod')
-        });
-
-
-        // fungsi select2 untuk opsi yang membutuhkan data karyawan (fasilitator, leader, anggota)
-        function search_select2(select_element_id) {
-
-            $('#' + select_element_id).select2({
+             $('#id_bod').select2({
                 // allowClear: true,
                 // theme: "classic",
                 allowClear: true,
                 width: "100%",
-                placeholder: "Pilih " + select_element_id.split("_")[1] + (select_element_id.split("_")[2] ? " " +
-                    select_element_id.split("_")[2] + " : " : " : "),
+                placeholder: "Pilih BOD",
                 ajax: {
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     type: 'POST', // Metode HTTP POST
-                    url: '{{ route('query.get_BOD') }}',
+                    url: '/approveadminuery/get_BOD',
                     dataType: 'json',
                     delay: 250, // Penundaan dalam milidetik sebelum permintaan AJAX dikirim
                     data: function(params) {
@@ -144,7 +132,7 @@
                     cache: true
                 }
             });
-        }
+        });
 
         function loading(element) {
             var id = element.id

@@ -80,7 +80,7 @@
     <!-- Main page content-->
     <div class="container-xl px-4 mt-4">
         {{-- Component Navigation Bar Assessment --}}
-        @include('components.assessment.navbar')
+        @include('auth.user.paper.navbar')
 
         <div class="mb-3">
             @if (session('success'))
@@ -112,6 +112,11 @@
                 </div>
             </div>
             <div class="card-body">
+                @if($data_event->isNotEmpty())
+                    <div class="mb-3">
+                        @livewire('assessment.presentation-team-total', ['eventId' => $data_event->first()->id])
+                    </div>
+                @endif
                 <div class="mb-3">
                     <div class="row">
                         <div class="col-md-4 col-sm-4 col-xs-12">
@@ -182,7 +187,6 @@
                 <!-- Modal Footer -->
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary">Terapkan Filter</button>
                 </div>
             </div>
         </div>
@@ -327,15 +331,27 @@
             $('#fix-all-pa').val($(`#filter-event`).val())
 
             $('#filter-event').on('change', function () {
-                dataTable.destroy();
-                dataTable.destroy();
-
-                document.getElementById('datatable-card').insertAdjacentHTML('afterbegin', `<table id="datatable-competition"></table>`);
-                $('#fix-all-pa').val($(`#filter-event`).val())
-
+                const selectedEventId = $(this).val();
+                console.log("ðŸ”„ Emit eventChanged ke Livewire dengan ID:", selectedEventId);
+            
+                // Emit ke Livewire
+                Livewire.emit('eventChanged', selectedEventId);
+            
+                // Update hidden input dan datatable
+                $('#fix-all-pa').val(selectedEventId);
+            
+                // Reset DataTable
+                if (dataTable) {
+                    dataTable.destroy();
+                }
+            
+                $('#datatable-competition').remove(); // hapus tabel lama
+                $('#datatable-card').prepend('<table id="datatable-competition"></table>');
+            
                 column = updateColumnDataTable();
                 dataTable = initializeDataTable(column);
             });
+            
             $('#filter-category').on('change', function () {
                 dataTable.destroy();
                 dataTable.destroy();

@@ -145,6 +145,11 @@
                                 <input class="form-control" name="phone_number" id="inputHP" type="text"
                                     value="{{ old('hp') }}" placeholder="Masukkan Nomor Telepon Anda" required />
                             </div>
+                            <div class="mb-4">
+                                <h6 class="small mb-1" for="inputHP">Tes</h6>
+                                <input class="form-control" name="tes" id="inputTes" type="text"
+                                    value="{{ old('tes') }}" placeholder="Masukkan Nomor Tes Anda" required />
+                            </div>
                             <div class="mb-3">
                                 <h6 class="small mb-1">Tema</h6>
                                 <select class="form-select" aria-label="Default select example" name="theme"
@@ -203,11 +208,13 @@
                             <div class="mb-3">
                                 <h6 class="small mb-1">Upload Foto Tim (Resmi)</h6>
                                 <input type="file" name="proof_idea" class="form-control" accept="image/*">
+                                <small class="text-muted">Format: JPG/JPEG/PNG, Maksimal ukuran 5MB</small>
                             </div>
 
                             <div class="mb-3">
                                 <h6 class="small mb-1">Upload Foto Produk Inovasi</h6>
                                 <input type="file" name="innovation_photo" class="form-control" accept="image/*">
+                                <small class="text-muted">Format: JPG/JPEG/PNG, Maksimal ukuran 5MB</small>
                             </div>
                             @if (App::environment('stage'))
                                 <div class="mb-3">
@@ -459,8 +466,7 @@
                         return {
                             results: $.map(data, function(item) {
                                 return {
-                                    text: item.employee_id + ' - ' + item
-                                        .name, // Nama yang akan ditampilkan di kotak seleksi
+                                    text: item.employee_id + ' - ' + item.name + ' - ' + item.company_code, 
                                     id: item.employee_id // Nilai yang akan dikirimkan saat opsi dipilih
                                 };
                             })
@@ -500,8 +506,7 @@
                         return {
                             results: $.map(data, function(item) {
                                 return {
-                                    text: item.employee_id + ' - ' + item.name + ' - ' + item
-                                        .job_level, // Nama yang akan ditampilkan di kotak seleksi
+                                    text: item.employee_id + ' - ' + item.name + ' -- ' + item.company_name + ' (' + item.job_level + ')', // Nama yang akan ditampilkan di kotak seleksi
                                     id: item.employee_id // Nilai yang akan dikirimkan saat opsi dipilih
                                 };
                             })

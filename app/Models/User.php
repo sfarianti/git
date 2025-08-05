@@ -23,11 +23,13 @@ class User extends Authenticatable
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'uuid',
         'employee_id',
         'username',
         'password',
         'name',
         'email',
+        'photo_profile',
         'position_title',
         'company_code',
         'company_name',
@@ -128,16 +130,16 @@ class User extends Authenticatable
 
     public function atasan()
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(User::class, 'manager_id', 'employee_id');
     }
     public function bawahan()
     {
-        return $this->hasMany(User::class, 'manager_id');
+        return $this->hasMany(User::class, 'manager_id', 'employee_id');
     }
 
     public function atasan__()
     {
-        return $this->belongsTo(User::class, 'manager_id')
+        return $this->belongsTo(User::class, 'manager_id', 'employee_id')
             ->withDefault([
                 'name' => 'No Manager',
                 'position_title' => '-'
@@ -146,7 +148,7 @@ class User extends Authenticatable
 
     public function bawahan__()
     {
-        return $this->hasMany(User::class, 'manager_id')
+        return $this->hasMany(User::class, 'manager_id', 'employee_id')
             ->whereRaw('manager_id::integer = ?', [$this->id]);
     }
     public function teams()

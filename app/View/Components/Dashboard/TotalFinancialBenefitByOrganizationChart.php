@@ -46,8 +46,8 @@ class TotalFinancialBenefitByOrganizationChart extends Component
 
         // Ambil data total financial benefit
         $this->chartData = Paper::select(
-            DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit}) as organization_unit"),
-            DB::raw('EXTRACT(YEAR FROM papers.created_at) as year'),
+            DB::raw("COALESCE(users.{$this->organizationUnit}, 'Lainnya') as organization_unit"),
+            'events.year as year',
             DB::raw('SUM(papers.financial) as total_financial')
         )
             ->join('teams', 'papers.team_id', '=', 'teams.id')
@@ -56,16 +56,13 @@ class TotalFinancialBenefitByOrganizationChart extends Component
                     ->where('pvt_members.status', 'leader'); // Hanya ambil leader
             })
             ->join('users', 'pvt_members.employee_id', '=', 'users.employee_id')
-            ->leftJoin('user_hierarchy_histories', function ($join) {
-                $join->on('user_hierarchy_histories.user_id', '=', 'users.id')
-                    ->whereRaw('papers.created_at >= COALESCE(user_hierarchy_histories.effective_start_date, papers.created_at)')
-                    ->whereRaw('papers.created_at <= COALESCE(user_hierarchy_histories.effective_end_date, papers.created_at)');
-            })
+            ->join('pvt_event_teams', 'pvt_event_teams.team_id', '=', 'teams.id')
+            ->join('events', 'events.id', '=', 'pvt_event_teams.event_id')
             ->where('teams.company_code', $companyCode)
             ->where('papers.status', 'accepted by innovation admin')
-            ->whereYear('papers.created_at', $this->year)
-            ->groupBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"), DB::raw('EXTRACT(YEAR FROM papers.created_at)'))
-            ->orderBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"))
+            ->whereYear('events.year', $this->year)
+            ->groupBy(DB::raw("COALESCE(users.{$this->organizationUnit}, 'Lainnya')"), 'events.year')
+            ->orderBy('total_financial', 'DESC')
             ->get()
             ->groupBy('organization_unit')
             ->map(function ($data) {

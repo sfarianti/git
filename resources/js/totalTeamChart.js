@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             onClick: (event, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    const companyId = chartDataTotalTeam.company_id[index];
+                    const companyId = chartDataTotalTeam.datasets['company_id'][index];
 
                     if (companyId) {
                         window.location.href = `/detail-company-chart/${companyId}`;

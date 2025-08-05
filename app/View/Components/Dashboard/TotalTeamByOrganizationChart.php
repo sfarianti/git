@@ -44,36 +44,37 @@ class TotalTeamByOrganizationChart extends Component
         $company = Company::findOrFail($companyId);
         $companyCode = $company->company_code;
         $this->company_name = $company->company_name;
+        
+        if(in_array($companyCode, [2000, 7000])){
+            $filterCompany = [2000, 7000];
+        } else {
+            $filterCompany = [$companyCode];
+        }
 
         // Ambil data 4 tahun terakhir
-        $this->chartData = Team::select(
-            DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit}) as organization_unit"),
-            DB::raw('EXTRACT(YEAR FROM papers.created_at) as year'),
-            DB::raw('COUNT(teams.id) as total_teams')
-        )
+        $this->chartData = Team::selectRaw("
+            COALESCE(users.{$this->organizationUnit}, 'Lainnya') AS organization_unit,
+            YEAR(events.year) AS year,
+            COUNT(DISTINCT teams.id) AS total_teams
+            ")
             ->join('pvt_members', function ($join) {
                 $join->on('teams.id', '=', 'pvt_members.team_id')
-                    ->where('pvt_members.status', 'leader');
+                     ->where('pvt_members.status', 'leader');
             })
             ->join('users', 'pvt_members.employee_id', '=', 'users.employee_id')
             ->join('papers', function ($join) {
                 $join->on('teams.id', '=', 'papers.team_id')
-                    ->where('papers.status', 'accepted by innovation admin');
+                     ->where('papers.status', 'accepted by innovation admin');
             })
-            ->leftJoin('user_hierarchy_histories', function ($join) {
-                $join->on('user_hierarchy_histories.user_id', '=', 'users.id')
-                    ->whereRaw('papers.created_at >= COALESCE(user_hierarchy_histories.effective_start_date, papers.created_at)')
-                    ->whereRaw('papers.created_at <= COALESCE(user_hierarchy_histories.effective_end_date, papers.created_at)');
-            })
-            ->where('teams.company_code', $companyCode)
-            ->whereYear('papers.created_at', $this->year)
-            ->groupBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"), DB::raw('EXTRACT(YEAR FROM papers.created_at)'))
-            ->orderBy(DB::raw("COALESCE(user_hierarchy_histories.{$this->organizationUnit}, users.{$this->organizationUnit})"))
+            ->join('pvt_event_teams', 'teams.id', '=', 'pvt_event_teams.team_id')
+            ->join('events', 'events.id', '=', 'pvt_event_teams.event_id')
+            ->whereIn('teams.company_code', $filterCompany)
+            ->whereYear('events.year', $this->year)
+            ->groupBy('organization_unit', 'year')
+            ->orderBy('total_teams', 'DESC')
             ->get()
             ->groupBy('organization_unit')
-            ->map(function ($data) {
-                return $data->keyBy('year')->map(fn($item) => $item->total_teams);
-            });
+            ->map(fn ($items) => $items->keyBy('year')->map->total_teams);
     }
 
     /**

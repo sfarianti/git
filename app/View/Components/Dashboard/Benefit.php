@@ -2,6 +2,7 @@
 
 namespace App\View\Components\Dashboard;
 
+use App\Models\Event;
 use App\Models\Paper;
 use Illuminate\Support\Carbon;
 use Illuminate\View\Component;
@@ -24,23 +25,35 @@ class Benefit extends Component
         $this->isSuperadmin = $isSuperadmin;
         $this->userCompanyCode = $userCompanyCode;
         $yearNow = Carbon::now()->year;
+        
+        if(in_array($this->userCompanyCode, [2000, 7000])) {
+            $filteredCompanyCode = [2000, 7000];
+        } else {
+            $filteredCompanyCode = [$this->userCompanyCode];
+        }
 
         // Status benefit yang sudah disetujui
         $acceptedStatuses = [
             'accepted by innovation admin',
         ];
+        
+        $teamsStatusCompe = ['internal', 'group'];
 
         // Mengambil data total benefit untuk setiap perusahaan berdasarkan status yang sudah disetujui
         $query = Paper::join('teams', 'papers.team_id', '=', 'teams.id')
             ->join('companies', 'teams.company_code', '=', 'companies.company_code')
-            ->selectRaw('companies.company_name, companies.company_code, SUM(papers.financial + papers.potential_benefit) as total_benefit, companies.sort_order')
+            ->join('pvt_event_teams', 'teams.id', '=', 'pvt_event_teams.team_id')
+            ->join('events', 'pvt_event_teams.event_id', '=', 'events.id')
+            ->selectRaw('companies.company_name, companies.company_code, SUM(DISTINCT papers.financial + papers.potential_benefit) as total_benefit, companies.sort_order')
             ->whereIn('papers.status', $acceptedStatuses)
+            ->where('events.status', 'finish')
+            ->whereIn('teams.status_lomba', $teamsStatusCompe)
             ->groupBy('companies.company_name', 'companies.sort_order', 'companies.company_code')
-            ->orderBy('companies.sort_order'); // fallback urutan kalau ada yang sort_order-nya sama/null
+            ->orderBy('companies.sort_order');
 
         // Filter data berdasarkan company_code 2000 jika bukan superadmin
         if (!$this->isSuperadmin) {
-            $query->where('teams.company_code', $this->userCompanyCode);
+            $query->whereIn('teams.company_code', $filteredCompanyCode);
         }
 
         $data = $query->get();
@@ -80,7 +93,7 @@ class Benefit extends Component
         }
 
         // Get available years for the dropdown
-        $this->availableYears = Paper::selectRaw('EXTRACT(YEAR FROM created_at) as year')
+        $this->availableYears = Event::select('year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')

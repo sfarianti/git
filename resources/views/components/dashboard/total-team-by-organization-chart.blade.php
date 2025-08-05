@@ -22,15 +22,19 @@
 @vite(['resources/js/totalTeamByOrganization.js']);
 
 <script type="module">
-    import {
-        initializeTotalTeamChart
-    } from "{{ Vite::asset('resources/js/totalTeamByOrganizationChart.js') }}";
-    const chartData = @json($chartData);
-    const organizationUnitLabel = @json($labels[$organizationUnit] ?? 'Unit Organisasi');
-    const company_name = @json($company_name);
-    window.chartData = chartData; // Store chart data globally
-    window.organizationUnitLabel = organizationUnitLabel; // Store organization unit label globally
-    window.company_name = company_name; // Store organization unit label globally
-    initializeTotalTeamChart(chartData); // Panggil fungsi dari file JS
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartData = @json($chartData); // Kirim data ke JavaScript
+        const company_name = @json($company_name);
+        
+        window.chartData = chartData; // Store chart data globally
+        window.company_name = company_name; // Store company name globally
+
+        // Kalau kamu ingin langsung render dari sini (optional):
+        if (typeof window.initializeTotalTeamChart === 'function') {
+            window.initializeTotalTeamChart(chartData);
+        }
+    });
 </script>
-@vite(['resources/js/exportTotalTeamByOrganization.js'])
+
+<script type="module" src="{{ asset('build/assets/totalTeamByOrganizationChart-60b5b131.js') }}"></script>
+<script type="module" src="{{ asset('build/assets/exportTotalTeamByOrganization-2b7c41f1.js') }}"></script>

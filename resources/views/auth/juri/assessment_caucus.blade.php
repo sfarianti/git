@@ -96,17 +96,61 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-sm-6 col-xs-6">
-                    <x-assessment-matrix.show-image-button />
+                <x-assessment-matrix.show-image-button />
+                <div class="d-flex flex-column align-items-start">
+                    @if ($datas->full_paper || $datas->file_review)
+                            <a href="{{ route('paper.watermarks', ['paper_id' => $datas->paper_id]) }}?rand={{ uniqid() }}" class="btn btn-sm text-white mt-2" style="background-color: #e84637" target="_blank">
+                                Lihat Makalah
+                            </a>
+                            <a href="{{ route('assessment.benefitView', ['paperId' => $datas->paper_id]) }}" class="btn btn-sm text-white mt-2" style="background-color: #e84637" target="_blank">
+                                Lihat Berita Acara Benefit
+                            </a>
+                            <a href="{{ asset('storage/' . $datas->proof_idea) }}" 
+                            class="btn btn-sm text-white mt-2" 
+                            style="background-color: #e84637" 
+                            target="_blank">
+                                Lihat Dokumen Pendukung
+                            </a>
+
+                            @if ($datas->full_paper_updated_at)
+                                <small class="text-muted mt-2">
+                                    <small class="text-muted mt-2">
+                                        Makalah Terakhir diubah pada:
+                                        {{ \Carbon\Carbon::parse($datas->full_paper_updated_at)->translatedFormat('d F Y H:i') }}
+                                    </small>
+
+                                </small>
+                            @else
+                                <small class="text-muted mt-2">
+                                    Terakhir diubah pada: Tidak tersedia
+                                </small>
+                            @endif
+                        @else
+                            <p class="text-muted">File paper belum tersedia.</p>
+                        @endif
                 </div>
             </div>
+
+            </div>
         </div>
+
         <div class="card mb-4">
             <div class="card-header">Form Penilaian Caucus</div>
             <form action="{{ route('assessment.submitJuri', ['id' => Request::segments()[2]]) }}" method="post">
                 @csrf
                 @method('put')
                 <div class="card-body">
+                    <div class="w-100 mx-auto text-center">
+                        <p class="mb-0" style="font-weight: bold;">Total Skor Presentation:</p> 
+                        <p class="mt-0 text-primary" style="font-size: 1.7rem; font-weight: 400">{{ $datas->score_presentation }}</p>
+                    </div>
                     <table id="datatable-penilaian"></table>
+                    <hr>
+                    <div class="mb-3 mx-auto">
+                        <x-assessment.deviation-information 
+                            :event-team-id="Request::segments()[2]" 
+                            :assessment-stage="'caucus'" />
+                    </div>
                     <hr>
                     <div class="col-md-12 mb-3">
                         <label class="small mb-1" for="inputRecomCategory">Rekomendasi Kategori</label>
@@ -124,6 +168,32 @@
                         <label class="small mb-1" for="inputCommentBenefit">Komentar Benefit</label>
                         <textarea name="suggestion_for_benefit" id="inputCommentBenefit" class="form-control" cols="30" rows="3">{{ $sofiData->suggestion_for_benefit }}</textarea>
                     </div>
+                    <input type="hidden" name="updated_at" value="{{ $datas->updated_at->format('Y-m-d H:i:s') }}">
+                    <input type="hidden" name="stage" value="assessment-caucus-value">
+                    <div class="col-md-12 mb-3">
+                        <label class="small mb-1 fw-600" for="inputFinancialBenefit">Benefit Finansial</label>
+                        <input 
+                            type="text"
+                            name="financial_benefit" 
+                            id="inputFinancialBenefit" 
+                            class="form-control w-100" 
+                            value="{{ number_format($datas->financial, 0, ',', '.') }}" 
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            {{ auth()->user()->role === 'Superadmin' || auth()->user()->role === 'Admin' ? 'disabled' : 'required' }}
+                        >
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="small mb-1 fw-600" for="inputPotentialBenefit">Benefit Potensial</label>
+                        <input 
+                            type="text"
+                            name="potential_benefit" 
+                            id="inputPotentialBenefit" 
+                            class="form-control w-100" 
+                            value="{{ number_format($datas->potential_benefit, 0, ',', '.') }}"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            {{ auth()->user()->role === 'Superadmin' || auth()->user()->role === 'Admin' ? 'disabled' : 'required' }}
+                        >
+                    </div>
                 </div>
                 <div class="card-footer">
                     @if (Auth::user()->role == 'Admin' || Auth::user()->role == 'Superadmin')
@@ -137,10 +207,11 @@
                                     data-bs-target="#deleteJuri">Hapus Juri</button>
                             </div>
                         </div>
+                    @elseif(Auth::user()->role == 'Juri')
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="btnsubmit">Submit Nilai</button>
+                        </div>
                     @endif
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary" id="btnsubmit">Submit Nilai</button>
-                    </div>
                 </div>
             </form>
         </div>
@@ -157,7 +228,7 @@
                 <form action="{{ route('assessment.addJuri') }}" method="post">
                     @csrf
                     <input type="text" name="event_team_id" value="{{ $datas->event_team_id }}" hidden>
-                    <input type="text" name="stage" value="presentation" hidden>
+                    <input type="text" name="stage" value="caucus" hidden>
                     <div class="modal-body">
                         <div class="col-md-12">
                             <label for="dataJudge">Pilih Juri</label>
@@ -174,7 +245,7 @@
         </div>
     </div>
 
-    {{-- modal dekete juri --}}
+    {{-- modal dekele juri --}}
     <div class="modal fade" id="deleteJuri" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -187,6 +258,8 @@
                     @csrf
                     <div class="modal-body">
                         <div class="col-md-12">
+                            <input type="text" name="event_team_id" value="{{ $datas->event_team_id }}" hidden>
+                            <input type="hidden" name="stage" value="caucus">
                             <label for="dataJudge">Pilih Juri</label>
                             <select name="judge_id" class="form-select" id="">
                                 @foreach ($datas_juri as $data_juri)

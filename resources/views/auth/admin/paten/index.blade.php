@@ -1,7 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Paten Inovasi')
 @section('content')
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 <style>
     .ui-autocomplete {
         z-index: 999999 !important;
@@ -38,13 +40,13 @@
                 <div class="d-flex justify-content-end mb-2">
                     <input type="text" id="search" class="form-control search-input" placeholder="Cari Daftar Paten">
                 </div>
-                @if(Auth::user()->role == 'Superadmin' || Auth::user()->role == 'admin')
+                @if(Auth::user()->role == 'Superadmin' || Auth::user()->role == 'Admin')
                 <div class="btn-container mb-3 text-end">
                     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#patent-application">Buat Usulan Paten</button>
                     <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#document-template">Perbarui Template Dukomen</button>
                 </div>
                 @endif
-                <x-patent.patent-table />
+                @include('components.patent.patent-table', ['patentData' => \App\Models\Patent::with(['paper', 'employee', 'patenMaintenance'])->visibleTo(Auth::user())->paginate(10)])
             </div>
         </div>
     </div>
@@ -124,7 +126,9 @@
 @endsection
 
 @push('js')
-<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
     $("#inputInnovationTittle").autocomplete({
         source: function(request, response) {

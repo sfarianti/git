@@ -252,10 +252,11 @@ class PaperController extends Controller
 
             $newTeam = Team::create([
                 'team_name' => $request->input('team_name'),
-                'company_code' => Company::where('company_name', $request->input('company'))->pluck('company_code')[0],
+                'company_code' => Company::where('company_name', $request->input('company'))->value('company_code'),
                 'category_id' => $request->input('category'),
                 'theme_id' => $request->input('theme'),
                 'phone_number' => $request->input('phone_number'),
+                'Tes' => $request->input('Tes'),
                 'status_lomba' => $request->input('status_lomba'),
                 'inovasi_lokasi' => $request->input('inovasi_lokasi'),
                 'created_at' => $teamCreatedAt,
@@ -267,7 +268,7 @@ class PaperController extends Controller
                 'status' => 'created'
             ]);
             
-            $step = MetodologiPaper::where('id', $request->input('metodologi_paper_id'))->pluck('step')[0];
+            $step = MetodologiPaper::where('id', $request->input('metodologi_paper_id'))->value('step');
             if ($step < 8) {
 
                 Paper::create([
@@ -325,26 +326,43 @@ class PaperController extends Controller
                 ]);
             }
 
-            PvtMember::create([
-                'team_id' => $newTeam->id,
-                'employee_id' => $request->input('fasil'),
-                'status' => 'facilitator'
-            ]);
+            // Fungsi untuk buat anggota tim (snapshot posisi, jabatan, dst)
+            function createTeamMember($teamId, User $user, $status) {
+                PvtMember::create([
+                    'team_id' => $teamId,
+                    'employee_id' => $user->employee_id,
+                    'status' => $status,
+                    'position_title' => $user->position_title,
+                    'directorate_name' => $user->directorate_name,
+                    'group_function_name' => $user->group_function_name,
+                    'department_name' => $user->department_name,
+                    'unit_name' => $user->unit_name,
+                    'section_name' => $user->section_name,
+                    'sub_section_of' => $user->sub_section_of,
+                    'company_code' => $user->company_code,
+                ]);
+            }
 
-            PvtMember::create([
-                'team_id' => $newTeam->id,
-                'employee_id' => $request->input('leader'),
-                'status' => 'leader'
-            ]);
+            // Buat facilitator
+            $facilitator = User::where('employee_id', $request->input('fasil'))->first();
+            if ($facilitator) {
+                createTeamMember($newTeam->id, $facilitator, 'facilitator');
+            }
 
-            if ($request->input('anggota') != null) {
-                foreach ($request->input('anggota') as $input_anggota) {
-                    // echo $input_anggota;
-                    PvtMember::create([
-                        'team_id' => $newTeam->id,
-                        'employee_id' => $input_anggota,
-                        'status' => 'member'
-                    ]);
+            // Buat leader
+            $leader = User::where('employee_id', $request->input('leader'))->first();
+            if ($leader) {
+                createTeamMember($newTeam->id, $leader, 'leader');
+            }
+
+            // Buat anggota jika ada
+            $anggotaList = $request->input('anggota');
+            if ($anggotaList) {
+                foreach ($anggotaList as $anggotaId) {
+                    $member = User::where('employee_id', $anggotaId)->first();
+                    if ($member) {
+                        createTeamMember($newTeam->id, $member, 'member');
+                    }
                 }
             }
 
@@ -493,6 +511,10 @@ class PaperController extends Controller
     public function storeStages(Request $request, $id, $stage)
     {
         try {
+            $request->validate([
+                'step' => 'file|max:30720',
+            ]);
+            
             $paper = Paper::with('metodologiPaper')->findOrFail($id);
             $team = Team::findOrFail($paper->team_id);
 
@@ -518,41 +540,41 @@ class PaperController extends Controller
 
                 // / Pastikan relasi Team sudah dimuat dengan benar
                 if ($paper->team) {
-                    $fasilId = PvtMember::where('team_id', $paper->team->id)
-                        ->where('status', 'facilitator')
-                        ->pluck('employee_id')
-                        ->first();
+                    // $fasilId = PvtMember::where('team_id', $paper->team->id)
+                    //     ->where('status', 'facilitator')
+                    //     ->pluck('employee_id')
+                    //     ->first();
 
-                    $fasilData = User::where('employee_id', $fasilId)
-                        ->select('name', 'email')
-                        ->first();
+                    // $fasilData = User::where('employee_id', $fasilId)
+                    //     ->select('name', 'email')
+                    //     ->first();
 
-                    $leaderId = PvtMember::where('team_id', $paper->team->id)
-                        ->where('status', 'leader')
-                        ->pluck('employee_id')
-                        ->first();
+                    // $leaderId = PvtMember::where('team_id', $paper->team->id)
+                    //     ->where('status', 'leader')
+                    //     ->pluck('employee_id')
+                    //     ->first();
 
-                    $leaderData = User::where('employee_id', $leaderId)
-                        ->select('name', 'email')
-                        ->first();
+                    // $leaderData = User::where('employee_id', $leaderId)
+                    //     ->select('name', 'email')
+                    //     ->first();
 
-                    $inovasi_lokasi = Paper::where('id', $id)
-                        ->select('inovasi_lokasi')
-                        ->first();
+                    // $inovasi_lokasi = Paper::where('id', $id)
+                    //     ->select('inovasi_lokasi')
+                    //     ->first();
 
-                    // Membuat objek
-                    $mail = new EmailNotificationPaperFasil(
-                        $paper,
-                        'full_paper',
-                        $paper->innovation_title,
-                        $paper->team->team_name,
-                        $leaderData,
-                        $fasilData,
-                        $inovasi_lokasi
-                    );
+                    // // Membuat objek
+                    // $mail = new EmailNotificationPaperFasil(
+                    //     $paper,
+                    //     'full_paper',
+                    //     $paper->innovation_title,
+                    //     $paper->team->team_name,
+                    //     $leaderData,
+                    //     $fasilData,
+                    //     $inovasi_lokasi
+                    // );
 
-                    // Mengirim email ke fasilitator
-                    Mail::to($fasilData->email)->send($mail);
+                    // // Mengirim email ke fasilitator
+                    // Mail::to($fasilData->email)->send($mail);
                 }
             }
             //  Kode di bawwah ini mengirimkan notifikasi ke user saat ini menggunakan class PaperNotification
@@ -584,23 +606,32 @@ class PaperController extends Controller
     public function storeFileStages(Request $request, $id, $stage)
     {
         try {
-            if ($this->checkIsCompressed($request)) {
-                return redirect()->back()->withErrors('Gagal mengunggah Paper! Pastikan berkas tidak terkompres dan coba lagi.');
-            }
+            $request->validate([
+                'file_stage' => 'required|file|mimes:pdf|max:30720',
+            ]);
 
             $paper = Paper::findOrFail($id);
             $team = Team::findOrFail($paper->team_id);
-            $paper->$stage = '';
-            $paper->save();
-
+            
+            // Hapus file lama jika ada
+            if ($paper->$stage && Storage::disk('public')->exists($paper->$stage)) {
+                Storage::disk('public')->delete($paper->$stage);
+            }
+            
+            // Generate nama file unik
+            $filename = $stage . '_' . uniqid() . '.' . $request->file('file_stage')->getClientOriginalExtension();
+            
+            // Simpan file dan update field
             $paper->updateAndHistory([
                 $stage => $request->file('file_stage')->storeAs(
                     'internal/' . $team->status_lomba . '/' . $team->team_name,
-                    $stage . "." . $request->file('file_stage')->getClientOriginalExtension(),
+                    $filename,
                     'public'
                 ),
             ]);
-
+            
+            $paper->refresh();
+            
             if ($stage === 'full_paper') {
                 $steps = [
                     'step_1',
@@ -629,7 +660,9 @@ class PaperController extends Controller
 
             return redirect()->route('paper.index')->with('success', 'Full Paper berhasil diunggah dan diperbarui!');
         } catch (\Exception $e) {
-            return redirect()->route('paper.index')->withErrors('Error: Terjadi kesalahan saat menyimpan berkas. Silakan coba lagi nanti.');
+            return redirect()
+                ->route('paper.index')
+                ->withErrors('Error: ' . $e->getMessage());
         }
     }
 
@@ -641,38 +674,63 @@ class PaperController extends Controller
 
             if ($stage == 'full') {
                 $filePath = storage_path('app/public/' . ltrim(Paper::where('id', '=', $id)->pluck('full_paper')[0], '/'));
+                
                 if (!file_exists($filePath)) {
                     throw new Exception("Error, file tidak ada");
                 }
-
+                
+                if ($this->checkIsCompressedByPath($filePath)){
+                    return response()->file($filePath, [
+                        'Content-Type' => 'application/pdf',
+                        'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'
+                    ]);
+                }
+            
                 // Ambil Data User Saat Ini
                 $currentDateTime = Carbon::now()->format('l, d F Y H:i:s');
                 $userEmail = auth()->user()->email;
                 $userIp = request()->ip();
-
+            
                 $watermarkText = "{$currentDateTime}\nDilihat oleh {$userEmail}\nIP: {$userIp}";
-
+            
                 $pageCount = $fpdi->setSourceFile($filePath);
-                for($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
+                for ($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
                     $tplIdx = $fpdi->importPage($pageNum);
-                    $fpdi->AddPage();
-                    $fpdi->useTemplate($tplIdx, 0, 0);
-
+                    $size = $fpdi->getTemplateSize($tplIdx); // ambil ukuran halaman asli
+            
+                    // Tentukan orientasi: 'L' = landscape, 'P' = portrait
+                    $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+            
+                    // Tambahkan halaman baru dengan ukuran sesuai halaman asli
+                    $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                    $fpdi->useTemplate($tplIdx, 0, 0, $size['width'], $size['height']);
+            
                     // Tambahkan watermark
                     $fpdi->SetAlpha(0.1); // Transparansi watermark
                     $fpdi->SetFont('helvetica', 'B', 40);
                     $fpdi->SetTextColor(255, 0, 0);
-
-                    // Memulai transformasi untuk rotasi
+            
                     $fpdi->StartTransform();
-                    $fpdi->Rotate(45, 150, 50); // Atur sudut, x, y sesuai kebutuhan
-                    $fpdi->MultiCell(160, 180, $watermarkText, 0, 'C'); // Atur posisi watermark
-                    $fpdi->StopTransform(); // Akhiri transformasi
-
+            
+                    // Tempatkan watermark di tengah halaman dengan rotasi 45°
+                    $fpdi->StartTransform();
+                    $centerX = $size['width'] / 2;
+                    $centerY = $size['height'] / 2;
+                    $fpdi->Rotate(45, $centerX, $centerY);
+                    $fpdi->SetXY($centerX - 60, $centerY - 20); // Posisikan agar tidak overflow
+                    $fpdi->Cell(120, 10, "{$currentDateTime}", 0, 2, 'C');
+                    $fpdi->Cell(120, 10, "Dilihat oleh {$userEmail}", 0, 2, 'C');
+                    $fpdi->Cell(120, 10, "IP: {$userIp}", 0, 2, 'C');
+                    $fpdi->StopTransform();
+            
+                    $fpdi->StopTransform();
                     $fpdi->SetAlpha(1); // Reset transparansi
                 }
-
-                return response($fpdi->Output($paper->innovation_title, 'I'), 200)->header('Content-Type', 'application/pdf');
+            
+                return response($fpdi->Output('S'), 200)
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                    ->header('Pragma', 'no-cache');
             }
 
             $t = $paper->full_paper;
@@ -732,7 +790,10 @@ class PaperController extends Controller
                 }
             }
 
-            return response($fpdi->Output(), 200)->header('Content-Type', 'application/pdf');
+            return response($fpdi->Output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
         } catch (\Exception $e) {
             // dd($e->getMessage());
             return redirect()->route('paper.index')->withErrors('Error: ' . $e->getMessage());
@@ -761,7 +822,7 @@ class PaperController extends Controller
         }
 
         // Memperbarui status dan menyimpan perubahan
-        $record->status = 'upload benefit';
+        $record->status = 'accepted benefit by general manager';
         $record->updateAndHistory([], 'update benefit form');
 
         // Pastikan relasi Team sudah dimuat dengan benar
@@ -787,23 +848,23 @@ class PaperController extends Controller
                 ->first();
 
             // Membuat objek EmailNotificationBenefit
-            $mail = new EmailNotificationBenefit(
-                $record,
-                $record->status,
-                $record->innovation_title,
-                $record->team->team_name,
-                $leaderData,
-                $record->financial,
-                $record->potential_benefit,
-                $record->potensi_replikasi,
-                $record->non_financial,
-                $fasilData->name,
-                $fasilData,
-                $record->inovasi_lokasi
-            );
+            // $mail = new EmailNotificationBenefit(
+            //     $record,
+            //     $record->status,
+            //     $record->innovation_title,
+            //     $record->team->team_name,
+            //     $leaderData,
+            //     $record->financial,
+            //     $record->potential_benefit,
+            //     $record->potensi_replikasi,
+            //     $record->non_financial,
+            //     $fasilData->name,
+            //     $fasilData,
+            //     $record->inovasi_lokasi
+            // );
 
             // Mengirim email ke fasilitator
-            Mail::to($fasilData->email)->send($mail);
+            // Mail::to($fasilData->email)->send($mail);
 
             $user = Auth::user();
             $user->notify(new PaperNotification(
@@ -877,27 +938,27 @@ class PaperController extends Controller
 
             // Proses pengiriman email jika paper memiliki tim
             if ($paper->team) {
-                $leaderId = PvtMember::where('team_id', $paper->team->id)
-                    ->where('status', 'leader')
-                    ->pluck('employee_id')
-                    ->first();
+                // $leaderId = PvtMember::where('team_id', $paper->team->id)
+                //     ->where('status', 'leader')
+                //     ->pluck('employee_id')
+                //     ->first();
 
-                $leaderData = User::where('employee_id', $leaderId)
-                    ->select('name', 'email')
-                    ->first();
+                // $leaderData = User::where('employee_id', $leaderId)
+                //     ->select('name', 'email')
+                //     ->first();
 
-                $inovasi_lokasi = $paper->inovasi_lokasi;
+                // $inovasi_lokasi = $paper->inovasi_lokasi;
 
-                $mail = new EmailApprovalPaperFasil(
-                    $paper,
-                    $request->status,
-                    $paper->innovation_title,
-                    $paper->team->team_name,
-                    $leaderData,
-                    $inovasi_lokasi
-                );
+                // $mail = new EmailApprovalPaperFasil(
+                //     $paper,
+                //     $request->status,
+                //     $paper->innovation_title,
+                //     $paper->team->team_name,
+                //     $leaderData,
+                //     $inovasi_lokasi
+                // );
 
-                Mail::to($leaderData->email)->send($mail);
+                // Mail::to($leaderData->email)->send($mail);
             } else {
                 throw new \Exception('Paper tidak memiliki relasi dengan Team.');
             }
@@ -956,45 +1017,45 @@ class PaperController extends Controller
 
             // Pastikan relasi Team sudah dimuat dengan benar
             if ($paper->team) {
-                $gmId = PvtMember::where('team_id', $paper->team->id)
-                    ->where('status', 'gm')
-                    ->pluck('employee_id')
-                    ->first();
+                // $gmId = PvtMember::where('team_id', $paper->team->id)
+                //     ->where('status', 'gm')
+                //     ->pluck('employee_id')
+                //     ->first();
 
-                $gmData = User::where('employee_id', $gmId)
-                    ->select('name', 'email')
-                    ->first();
+                // $gmData = User::where('employee_id', $gmId)
+                //     ->select('name', 'email')
+                //     ->first();
 
-                $leaderId = PvtMember::where('team_id', $paper->team->id)
-                    ->where('status', 'leader')
-                    ->pluck('employee_id')
-                    ->first();
+                // $leaderId = PvtMember::where('team_id', $paper->team->id)
+                //     ->where('status', 'leader')
+                //     ->pluck('employee_id')
+                //     ->first();
 
-                $leaderData = User::where('employee_id', $leaderId)
-                    ->select('name', 'email')
-                    ->first();
+                // $leaderData = User::where('employee_id', $leaderId)
+                //     ->select('name', 'email')
+                //     ->first();
 
-                $inovasi_lokasi = Paper::where('id', $id)
-                    ->select('inovasi_lokasi')
-                    ->first();
+                // $inovasi_lokasi = Paper::where('id', $id)
+                //     ->select('inovasi_lokasi')
+                //     ->first();
 
                 // Membuat objek EmailApproval
-                $mail = new EmailApprovalBenefit(
-                    $paper,
-                    $request->status,
-                    $paper->innovation_title,
-                    $paper->team->team_name,
-                    $gmData,
-                    $benefitFinancial,
-                    $benefitPotential,
-                    $potensiReplikasi,
-                    $benefitNonFinancial,
-                    $leaderData,
-                    $inovasi_lokasi
-                );
+                // $mail = new EmailApprovalBenefit(
+                //     $paper,
+                //     $request->status,
+                //     $paper->innovation_title,
+                //     $paper->team->team_name,
+                //     $gmData,
+                //     $benefitFinancial,
+                //     $benefitPotential,
+                //     $potensiReplikasi,
+                //     $benefitNonFinancial,
+                //     $leaderData,
+                //     $inovasi_lokasi
+                // );
 
                 // Mengirim email ke inovator (ketua tim)
-                Mail::to($leaderData->email)->send($mail);
+                // Mail::to($leaderData->email)->send($mail);
             } else {
                 throw new \Exception('Paper tidak memiliki relasi dengan Team.');
             }
@@ -1002,45 +1063,45 @@ class PaperController extends Controller
             if ($request->status == 'accepted benefit by facilitator') {
                 // Pastikan relasi Team sudah dimuat dengan benar
                 if ($paper->team) {
-                    $gmId = PvtMember::where('team_id', $paper->team->id)
-                        ->where('status', 'gm')
-                        ->pluck('employee_id')
-                        ->first();
+                    // $gmId = PvtMember::where('team_id', $paper->team->id)
+                    //     ->where('status', 'gm')
+                    //     ->pluck('employee_id')
+                    //     ->first();
 
-                    $gmData = User::where('employee_id', $gmId)
-                        ->select('name', 'email')
-                        ->first();
+                    // $gmData = User::where('employee_id', $gmId)
+                    //     ->select('name', 'email')
+                    //     ->first();
 
-                    $leaderId = PvtMember::where('team_id', $paper->team->id)
-                        ->where('status', 'leader')
-                        ->pluck('employee_id')
-                        ->first();
+                    // $leaderId = PvtMember::where('team_id', $paper->team->id)
+                    //     ->where('status', 'leader')
+                    //     ->pluck('employee_id')
+                    //     ->first();
 
-                    $leaderData = User::where('employee_id', $leaderId)
-                        ->select('name', 'email')
-                        ->first();
+                    // $leaderData = User::where('employee_id', $leaderId)
+                    //     ->select('name', 'email')
+                    //     ->first();
 
-                    $inovasi_lokasi = Paper::where('id', $id)
-                        ->select('inovasi_lokasi')
-                        ->first();
+                    // $inovasi_lokasi = Paper::where('id', $id)
+                    //     ->select('inovasi_lokasi')
+                    //     ->first();
 
                     // Membuat objek EmailNotificationBenefitGM
-                    $mail = new EmailNotificationBenefitGM(
-                        $paper,
-                        $request->status,
-                        $paper->innovation_title,
-                        $paper->team->team_name,
-                        $gmData,
-                        $benefitFinancial,
-                        $benefitPotential,
-                        $potensiReplikasi,
-                        $benefitNonFinancial,
-                        $leaderData,
-                        $inovasi_lokasi
-                    );
+                    // $mail = new EmailNotificationBenefitGM(
+                    //     $paper,
+                    //     $request->status,
+                    //     $paper->innovation_title,
+                    //     $paper->team->team_name,
+                    //     $gmData,
+                    //     $benefitFinancial,
+                    //     $benefitPotential,
+                    //     $potensiReplikasi,
+                    //     $benefitNonFinancial,
+                    //     $leaderData,
+                    //     $inovasi_lokasi
+                    // );
 
                     // Mengirim email ke general manager
-                    Mail::to($gmData->email)->send($mail);
+                    // Mail::to($gmData->email)->send($mail);
                 } else {
                     throw new \Exception('Paper tidak memiliki relasi dengan Team.');
                 }
@@ -1154,72 +1215,72 @@ class PaperController extends Controller
             $benefitNonFinancial = $paper->non_financial;
 
             if ($paper->team) {
-                $gmId = PvtMember::where('team_id', $paper->team->id)
-                    ->where('status', 'gm')
-                    ->pluck('employee_id')
-                    ->first();
+                // $gmId = PvtMember::where('team_id', $paper->team->id)
+                //     ->where('status', 'gm')
+                //     ->pluck('employee_id')
+                //     ->first();
 
-                $gmData = User::where('employee_id', $gmId)
-                    ->select('name', 'email')
-                    ->first();
+                // $gmData = User::where('employee_id', $gmId)
+                //     ->select('name', 'email')
+                //     ->first();
 
-                $leaderId = PvtMember::where('team_id', $paper->team->id)
-                    ->where('status', 'leader')
-                    ->pluck('employee_id')
-                    ->first();
+                // $leaderId = PvtMember::where('team_id', $paper->team->id)
+                //     ->where('status', 'leader')
+                //     ->pluck('employee_id')
+                //     ->first();
 
-                $leaderData = User::where('employee_id', $leaderId)
-                    ->select('name', 'email', 'company_code')
-                    ->first();
+                // $leaderData = User::where('employee_id', $leaderId)
+                //     ->select('name', 'email', 'company_code')
+                //     ->first();
 
-                $inovasi_lokasi = Paper::where('id', $id)
-                    ->select('inovasi_lokasi')
-                    ->first();
+                // $inovasi_lokasi = Paper::where('id', $id)
+                //     ->select('inovasi_lokasi')
+                //     ->first();
 
-                $mail = new EmailApprovalBenefit(
-                    $paper,
-                    $paper->status,
-                    $paper->innovation_title,
-                    $paper->team->team_name,
-                    $gmData,
-                    $benefitFinancial,
-                    $benefitPotential,
-                    $potensiReplikasi,
-                    $benefitNonFinancial,
-                    $leaderData,
-                    $inovasi_lokasi
-                );
+                // $mail = new EmailApprovalBenefit(
+                //     $paper,
+                //     $paper->status,
+                //     $paper->innovation_title,
+                //     $paper->team->team_name,
+                //     $gmData,
+                //     $benefitFinancial,
+                //     $benefitPotential,
+                //     $potensiReplikasi,
+                //     $benefitNonFinancial,
+                //     $leaderData,
+                //     $inovasi_lokasi
+                // );
 
-                Mail::to($leaderData->email)->send($mail);
+                // Mail::to($leaderData->email)->send($mail);
             } else {
                 throw new \Exception('Paper tidak memiliki relasi dengan Team.');
             }
 
             if ($request->status == 'accepted benefit by general manager') {
                 if ($paper->team) {
-                    $admins = User::where('company_code', $leaderData->company_code)
-                        ->where('role', 'Admin')
-                        ->select('name', 'email')
-                        ->get();
+                    // $admins = User::where('company_code', $leaderData->company_code)
+                    //     ->where('role', 'Admin')
+                    //     ->select('name', 'email')
+                    //     ->get();
 
-                    foreach ($admins as $admin) {
-                        $mail = new EmailNotificationFinal(
-                            $paper,
-                            $request->status,
-                            $paper->innovation_title,
-                            $paper->team->team_name,
-                            $gmData,
-                            $benefitFinancial,
-                            $benefitPotential,
-                            $potensiReplikasi,
-                            $benefitNonFinancial,
-                            $leaderData,
-                            $admin,
-                            $inovasi_lokasi
-                        );
+                    // foreach ($admins as $admin) {
+                    //     // $mail = new EmailNotificationFinal(
+                    //     //     $paper,
+                    //     //     $request->status,
+                    //     //     $paper->innovation_title,
+                    //     //     $paper->team->team_name,
+                    //     //     $gmData,
+                    //     //     $benefitFinancial,
+                    //     //     $benefitPotential,
+                    //     //     $potensiReplikasi,
+                    //     //     $benefitNonFinancial,
+                    //     //     $leaderData,
+                    //     //     $admin,
+                    //     //     $inovasi_lokasi
+                    //     // );
 
-                        Mail::to($admin->email)->send($mail);
-                    }
+                    //     // Mail::to($admin->email)->send($mail);
+                    // }
                 } else {
                     throw new \Exception('Paper tidak memiliki relasi dengan Team.');
                 }
@@ -1314,7 +1375,11 @@ class PaperController extends Controller
                 }
             }
         } else {
-            if ($request->status == "accept" || $request->status == "reject") {
+            if ($request->status == "accept_innovation" || $request->status == "accept_assessment") {
+                $paper->status = "accepted by " . $request->evaluatedBy;
+                $msg = "change to " . $request->status . "ed by " . $request->evaluatedBy;
+                $paper->updateAndHistory([], $msg);
+            } else if ($request->status == 'reject') {
                 $paper->status = $request->status . "ed by " . $request->evaluatedBy;
                 $msg = "change to " . $request->status . "ed by " . $request->evaluatedBy;
                 $paper->updateAndHistory([], $msg);
@@ -1328,7 +1393,7 @@ class PaperController extends Controller
             'comment' => $request->comment
         ]);
 
-        if ($request->status == "accept") {
+        if ($request->status == "accept_assessment") {
             $team_id = Paper::where('id', $id)->pluck('team_id')[0];
             $team = Team::findOrFail($team_id);
             $event_id = Event::where('id', $request->event_id)->pluck('id')[0];
@@ -1339,7 +1404,6 @@ class PaperController extends Controller
             $idEventTeam = PvtEventTeam::updateOrCreate([
                 'team_id' => $team_id,
                 'event_id' => $event_id,
-                // 'year' => $request->year
             ])['id'];
 
             $category = PvtEventTeam::join('teams', 'pvt_event_teams.team_id', '=', 'teams.id')
@@ -1350,7 +1414,7 @@ class PaperController extends Controller
             
             History::create([
                 'team_id' => $team_id,
-                'activity' => "Accepted to Event Internal",
+                'activity' => "Accepted to Event " . ucfirst($eventData->type),
                 'status' => 'Accepted'
             ]);
 
@@ -1361,14 +1425,13 @@ class PaperController extends Controller
 
             $data_assessment_event = PvtEventTeam::join('pvt_assessment_events', function ($join) {
                 $join->on('pvt_assessment_events.event_id', '=', 'pvt_event_teams.event_id');
-                // ->on('pvt_assessment_events.year', '=', 'pvt_event_teams.year');
             })
                 ->where('pvt_event_teams.id', $idEventTeam)
                 ->where('pvt_assessment_events.category', $category)
                 ->where('pvt_assessment_events.status_point', 'active')
                 ->where('pvt_assessment_events.stage', 'on desk')
                 ->pluck(
-                    'pvt_assessment_events.id as assessment_event_id',
+                    'pvt_assessment_events.id as assessment_event_id'
                 )
                 ->toArray();
             // dd($data_assessment_event);
@@ -1379,6 +1442,25 @@ class PaperController extends Controller
                     'stage' => 'on desk'
                 ]);
             }
+        } else if ($request->status == "accept_innovation") {
+            $team_id = Paper::where('id', $id)->pluck('team_id')[0];
+            $team = Team::findOrFail($team_id);
+            $event_id = Event::where('id', $request->event_id)->pluck('id')[0];
+            $eventData = Event::findOrFail($event_id);
+            $team->update([
+                'status_lomba' => $eventData->type
+            ]);
+            PvtEventTeam::updateOrCreate([
+                'team_id' => $team_id,
+                'event_id' => $event_id,
+                'Status' => 'tidak Lolos On Desk'
+            ]);
+            
+            History::create([
+                'team_id' => $team_id,
+                'activity' => "Accepted to Event Internal",
+                'status' => 'Accepted'
+            ]);
         }
 
         $benefitFinancial = $paper->financial;
@@ -1412,22 +1494,22 @@ class PaperController extends Controller
                 ->first();
 
             // Membuat objek EmailApproval
-            $mail = new EmailApprovalFinal(
-                $paper,
-                $paper->status,
-                $paper->innovation_title,
-                $paper->team->team_name,
-                $gmData,
-                $benefitFinancial,
-                $benefitPotential,
-                $potensiReplikasi,
-                $benefitNonFinancial,
-                $leaderData,
-                $inovasi_lokasi
-            );
+            // $mail = new EmailApprovalFinal(
+            //     $paper,
+            //     $paper->status,
+            //     $paper->innovation_title,
+            //     $paper->team->team_name,
+            //     $gmData,
+            //     $benefitFinancial,
+            //     $benefitPotential,
+            //     $potensiReplikasi,
+            //     $benefitNonFinancial,
+            //     $leaderData,
+            //     $inovasi_lokasi
+            // );
 
             // Mengirim email ke inovator (ketua tim)
-            Mail::to($leaderData->email)->send($mail);
+            // Mail::to($leaderData->email)->send($mail);
         } else {
             throw new \Exception('Paper tidak memiliki relasi dengan Team.');
         }
@@ -1599,19 +1681,18 @@ class PaperController extends Controller
             ],
             'document_support.*' => [
                 'required',
-                'file', // Validasi bahwa ini adalah file
-                'mimes:pdf,jpg,jpeg,png,mp4,avi,mkv', // Validasi untuk menerima format pdf, gambar, atau video
+                'file',
+                'mimes:pdf,jpg,jpeg,png,mp4,avi,mkv,mov',
                 function ($attribute, $value, $fail) {
                     $fileType = $value->getMimeType();
-                    $fileSize = $value->getSize() / 1024; // ukuran dalam KB
-
-                    // Validasi berdasarkan tipe file
-                    if (str_contains($fileType, 'pdf') && $fileSize > 30720) { // PDF maksimal 30MB (30720 KB)
-                        $fail("The {$attribute} must not exceed 10MB.");
-                    } elseif (str_contains($fileType, 'image') && $fileSize > 5120) { // Gambar maksimal 5MB (5120 KB)
+                    $fileSize = $value->getSize() / 1024; // KB
+            
+                    if (Str::contains($fileType, 'pdf') && $fileSize > 30720) {
+                        $fail("The {$attribute} must not exceed 30MB.");
+                    } elseif (Str::contains($fileType, 'image') && $fileSize > 5120) {
                         $fail("The {$attribute} must not exceed 5MB.");
-                    } elseif (str_contains($fileType, 'video') && $fileSize > 51200) { // Video maksimal 50MB (51200 KB)
-                        $fail("The {$attribute} must not exceed 50MB.");
+                    } elseif (Str::contains($fileType, 'video') && $fileSize > 131072) {
+                        $fail("The {$attribute} must not exceed 128MB.");
                     }
                 },
             ],
@@ -1645,9 +1726,6 @@ class PaperController extends Controller
         }
     }
 
-
-
-
     public function deleteDocument(Request $request)
     {
         $document = DocumentSupport::find($request->id);
@@ -1660,32 +1738,30 @@ class PaperController extends Controller
         return redirect()->back()->withSuccess("Document deleted successfully");
     }
 
-    public function checkIsCompressed(Request $request)
+    public function checkIsCompressedByPath(string $filePath): bool
     {
         try {
-            // Validate the file input
-            $request->validate([
-                'file_stage' => 'required|file|mimes:pdf|max:10240', // Adjust the max size as needed
-            ]);
-
-            // Get the uploaded file
-            $uploadedFile = $request->file('file_stage');
-
-            // Create a StreamReader from the uploaded file
-            $stream = StreamReader::createByFile($uploadedFile->getPathname());
-
-            // Initialize FPDI with the StreamReader
+            if (!file_exists($filePath)) {
+                throw new \Exception("File tidak ditemukan: $filePath");
+            }
+    
+            // Buat stream dari path file
+            $stream = StreamReader::createByFile($filePath);
+    
+            // Inisialisasi FPDI
             $pdf = new Fpdi();
-            $pdf->setSourceFile($stream);
-
-            // Add a page and import content to trigger reading of the PDF
+    
+            // Trigger proses baca PDF
             $pdf->AddPage();
-            $pageCount = $pdf->setSourceFile($stream);
-
-            // If it reaches here, the file is likely not compressed in a way that FPDI can't handle
-            return false;
+            $pdf->setSourceFile($stream);
+    
+            // Jika tidak error, berarti bisa diproses
+            return false; // TIDAK terkompresi atau masih bisa dibaca
+        } catch (PdfParserException $e) {
+            // Tangani error parsing dari FPDI (biasanya karena kompresi)
+            return true;
         } catch (\Exception $e) {
-            // If an exception is thrown, it might indicate a compressed PDF that FPDI couldn't process
+            // Tangani error lainnya (misal file tidak ada)
             return true;
         }
     }
@@ -1728,7 +1804,7 @@ class PaperController extends Controller
         }
 
         // Update status fiksasi
-        $paper->status = 'upload full paper';
+        $paper->status = 'accepted paper by facilitator';
         $paper->save();
 
         // Ambil fasilitator dan leader
@@ -1753,15 +1829,15 @@ class PaperController extends Controller
 
         // Kirim email ke fasilitator
         try {
-            Mail::to($fasilUser->email)->send(new EmailNotificationPaperFasil(
-                $paper,
-                'full_paper',
-                $paper->innovation_title,
-                $paper->team->team_name,
-                $leaderUser->name,
-                $fasilUser->name,
-                $paper->inovasi_lokasi
-            ));
+            // Mail::to($fasilUser->email)->send(new EmailNotificationPaperFasil(
+            //     $paper,
+            //     'full_paper',
+            //     $paper->innovation_title,
+            //     $paper->team->team_name,
+            //     $leaderUser->name,
+            //     $fasilUser->name,
+            //     $paper->inovasi_lokasi
+            // ));
 
             return response()->json(['success' => true, 'message' => 'Makalah berhasil difiksasi dan email dikirim.']);
         } catch (\Exception $e) {
@@ -1769,45 +1845,71 @@ class PaperController extends Controller
         }
     }
 
-    public function addWatermarks($paperId, $stage = 'full_paper') {
+    public function addWatermarks($paperId, $stage = 'full_paper') 
+    {
         try {
-            // Ensure the filepath is correctly formatted by removing "f: " and trimming any leading/trailing slashes
-            $filePath = storage_path('app/public/' . ltrim(Paper::where('id', '=', $paperId)->pluck($stage)[0], '/'));
-
+            $paper = Paper::findOrFail($paperId); // Pastikan fresh
+            $paper->refresh();
+            $filePath = storage_path('app/public/' . ltrim($paper->$stage, '/'));
+    
             if (!file_exists($filePath)) {
-                    dump($filePath);
+                dump($filePath);
                 return response()->json(['error' => 'File tidak ditemukan.'], 404);
             }
-
+            
+            if ($this->checkIsCompressedByPath($filePath)){
+                return response()->file($filePath, [
+                    'Content-Type' => 'application/pdf',
+                    'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0',
+                ]);
+            }
+    
             $fpdi = new Fpdi();
-
-            // Ambil Data User Saat Ini
+    
             $currentDateTime = Carbon::now()->format('l, d F Y H:i:s');
             $userEmail = Auth::user()->email;
             $userIp = request()->ip();
-
+    
             $watermarkText = "{$currentDateTime}\nDilihat oleh {$userEmail}\nIP: {$userIp}";
-
+    
             $pageCount = $fpdi->setSourceFile($filePath);
-            for($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
+            for ($pageNum = 1; $pageNum <= $pageCount; $pageNum++) {
                 $tplIdx = $fpdi->importPage($pageNum);
-                $fpdi->useTemplate($tplIdx, 0, 0);
-
+                $size = $fpdi->getTemplateSize($tplIdx); // ambil ukuran halaman asli
+            
+                // Tentukan orientasi: 'L' = landscape, 'P' = portrait
+                $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+            
+                // Tambahkan halaman baru dengan ukuran sesuai halaman asli
+                $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tplIdx, 0, 0, $size['width'], $size['height']);
+            
                 // Tambahkan watermark
                 $fpdi->SetAlpha(0.1); // Transparansi watermark
                 $fpdi->SetFont('helvetica', 'B', 40);
                 $fpdi->SetTextColor(255, 0, 0);
-
-                // Memulai transformasi untuk rotasi
+            
                 $fpdi->StartTransform();
-                $fpdi->Rotate(45, 150, 50); // Atur sudut, x, y sesuai kebutuhan
-                $fpdi->MultiCell(160, 180, $watermarkText, 0, 'C'); // Atur posisi watermark
-                $fpdi->StopTransform(); // Akhiri transformasi
-
+            
+                // Tempatkan watermark di tengah halaman dengan rotasi 45°
+                $fpdi->StartTransform();
+                $centerX = $size['width'] / 2;
+                $centerY = $size['height'] / 2;
+                $fpdi->Rotate(45, $centerX, $centerY);
+                $fpdi->SetXY($centerX - 60, $centerY - 20); // Posisikan agar tidak overflow
+                $fpdi->Cell(120, 10, "{$currentDateTime}", 0, 2, 'C');
+                $fpdi->Cell(120, 10, "Dilihat oleh {$userEmail}", 0, 2, 'C');
+                $fpdi->Cell(120, 10, "IP: {$userIp}", 0, 2, 'C');
+                $fpdi->StopTransform();
+            
+                $fpdi->StopTransform();
                 $fpdi->SetAlpha(1); // Reset transparansi
             }
+            
+            return response($fpdi->Output('D'), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 
-            return response($fpdi->Output($filePath, 'I'), 200)->header('Content-Type', 'application/pdf');
         } catch (FileNotFoundException $e) {
             return response()->json(['error' => 'File tidak ditemukan.'], 404);
         } catch (\Exception $e) {
@@ -1835,5 +1937,178 @@ class PaperController extends Controller
         }
 
         return response()->download($filePath, basename($methodology . '-' . $step . '.docx'));
+    }
+    
+    public function updateDetailDataTeam(Request $request, Team $team)
+    {
+        $request->validate([
+            'team_name' => 'required|string|max:255',
+            'facilitator' => 'required|string|max:255',
+            'leader' => 'required|string|max:255',
+            'member' => 'required|array',
+            'member.*' => 'required|string|max:255',
+            'outsource' => 'nullable|array',
+            'outsource.*' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $team) {
+                // Update nama tim
+                $teamId = $team->id;
+                $team->update(['team_name' => $request->team_name]);
+
+                // Update facilitator & leader
+                foreach (['facilitator', 'leader'] as $role) {
+                    PvtMember::updateOrCreate(
+                        ['team_id' => $team->id, 'status' => $role],
+                        ['employee_id' => $request->$role]
+                    );
+                }
+
+                // Hapus semua member lama
+                PvtMember::where('team_id', $teamId)
+                    ->where('status', 'member')
+                    ->delete();
+
+                // Tambah member baru (batch insert)
+                $members = collect($request->member)->filter()->map(function ($id) use ($teamId) {
+                    return [
+                        'team_id' => $teamId,
+                        'employee_id' => $id,
+                        'status' => 'member',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                });
+
+                if ($members->isNotEmpty()) {
+                    PvtMember::insert($members->toArray());
+                }
+
+                // Hapus outsource lama
+                ph2Member::where('team_id', $teamId)
+                    ->delete();
+
+                    
+                    // Tambah outsource baru
+                if (!empty($request->outsource)) {
+                    $formattedDate = (int) date('Y') . (int) date('n') . (int) date('j');
+
+                    foreach ($request->outsource as $name) {
+                        // Step 1: insert dulu
+                        $new = ph2Member::create([
+                            'team_id' => $teamId,
+                            'name' => $name,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        // Step 2: update ph2_id setelah tahu id-nya
+                        $new->update([
+                            'ph2_id' => 'ph2-' . $formattedDate . '-' . $new->id,
+                        ]);
+                    }
+                }
+            });
+
+            return redirect()->route('paper.index')->with('success', 'Detail Tim Berhasil Diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->route('paper.index')->withErrors('Error: ' . $e->getMessage());
+        }
+    }
+
+    public function updateDetailDataPaper(Request $request, Paper $paper)
+    {
+        $request->validate([
+            'innovation_title' => 'required|string',
+            'innovation_location' => 'required|string|max:255',
+            'abstract' => 'required|string',
+            'problem' => 'required|string',
+            'main_cause' => 'required|string',
+            'solution' => 'required|string'
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $paper) {
+                $paper->update([
+                    'innovation_title' => $request->innovation_title,
+                    'inovasi_lokasi' => $request->innovation_location,
+                    'abstract' => $request->abstract,
+                    'problem' => $request->problem,
+                    'main_cause' => $request->main_cause,
+                    'solution' => $request->solution,
+                ]);
+            });
+
+            return redirect()->route('paper.index')->with('success', 'Detail Paper Berhasil Diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->route('paper.index')->withErrors('Error: ' . $e->getMessage());
+        }
+    }
+    
+    public function updatePaperPhoto(Request $request, Paper $paper)
+    {
+        $request->validate([
+            'innovation_photo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120', // Maksimal 5MB
+            'team_photo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120', // Maksimal 5MB
+        ]);
+
+        
+        try {
+            DB::transaction(function () use ($request, $paper) {
+            $team = Team::findOrFail($paper->team_id);
+
+            // Upload Foto Inovasi
+            if ($request->hasFile('innovation_photo')) {
+                // Hapus file lama jika ada
+                if ($paper->innovation_photo && Storage::disk('public')->exists($paper->innovation_photo)) {
+                    Storage::disk('public')->delete($paper->innovation_photo);
+                }
+
+                $innovationPhotoPath = $request->file('innovation_photo')->store(
+                    "internal/AP/{$team->team_name}/innovation_photo",
+                    'public'
+                );
+                $paper->innovation_photo = $innovationPhotoPath;
+            }
+
+            // Upload Foto Tim
+            if ($request->hasFile('team_photo')) {
+                if ($paper->proof_idea && Storage::disk('public')->exists($paper->proof_idea)) {
+                    Storage::disk('public')->delete($paper->proof_idea);
+                }
+
+                $teamPhotoPath = $request->file('team_photo')->store(
+                    "internal/AP/{$team->team_name}/proof_idea",
+                    'public'
+                );
+                $paper->proof_idea = $teamPhotoPath;
+            }
+
+            $paper->save();
+        });
+
+            return redirect()->route('paper.index')->with('success', 'Detail Benefit Berhasil Diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->route('paper.index')->withErrors('Error: ' . $e->getMessage());
+        }
+    }
+    
+    public function viewSupportingDocument($paperId)
+    {
+        $supportingData = DB::table('document_supportings')
+            ->where('paper_id', $paperId)
+            ->select(
+                'document_supportings.id as id',
+                'file_name',
+                'path'
+            )
+            ->get();
+        
+        if ($supportingData->isEmpty()) {
+            return response()->json(['message' => 'No documents found'], 404);
+        }
+        
+        return response()->json($supportingData);
     }
 }

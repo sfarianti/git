@@ -3,7 +3,7 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import autocolors from "chartjs-plugin-autocolors";
 
 export function renderTotalInnovatorWithGenderChart(
-    chartDataTotalInnovatorWithGenderChart,
+    chartDataTotalInnovatorWithGenderChart
 ) {
     const ctx = document
         .getElementById("totalInnovatorWithGenderChart")
@@ -11,10 +11,14 @@ export function renderTotalInnovatorWithGenderChart(
 
     const labels = Object.keys(chartDataTotalInnovatorWithGenderChart);
     const maleData = labels.map(
-        (year) => chartDataTotalInnovatorWithGenderChart[year].laki_laki || 0,
+        (year) => chartDataTotalInnovatorWithGenderChart[year].laki_laki || 0
     );
+    console.log(maleData);
     const femaleData = labels.map(
-        (year) => chartDataTotalInnovatorWithGenderChart[year].perempuan || 0,
+        (year) => chartDataTotalInnovatorWithGenderChart[year].perempuan || 0
+    );
+    const outsourceData = labels.map(
+        (year) => chartDataTotalInnovatorWithGenderChart[year].outsourcing || 0
     );
 
     new Chart(ctx, {
@@ -35,6 +39,12 @@ export function renderTotalInnovatorWithGenderChart(
                     backgroundColor: "#db2d92",
                     maxBarThickness: 60,
                 },
+                {
+                    label: "Outsource",
+                    data: outsourceData,
+                    backgroundColor: "#d8c600",
+                    maxBarThickness: 60,
+                }
             ],
         },
         options: {
@@ -76,17 +86,20 @@ function renderSummary(chartData) {
     const yearlyGenderData = {};
     let totalMale = 0;
     let totalFemale = 0;
+    let totalOutsource = 0;
 
     Object.entries(chartData).forEach(([year, data]) => {
         const maleCount = data.laki_laki || 0;
         const femaleCount = data.perempuan || 0;
-        const yearTotal = maleCount + femaleCount;
+        const outsourceCount = data.outsourcing || 0;
+        const yearTotal = maleCount + femaleCount + outsourceCount;
 
         yearlyTotals[year] = yearTotal;
-        yearlyGenderData[year] = { male: maleCount, female: femaleCount };
+        yearlyGenderData[year] = { male: maleCount, female: femaleCount, outsourcing: outsourceCount };
 
         totalMale += maleCount;
         totalFemale += femaleCount;
+        totalOutsource += outsourceCount;
     });
 
     // Calculate yearly growth
@@ -122,9 +135,10 @@ function renderSummary(chartData) {
     ).toFixed(0);
 
     // Calculate gender ratio
-    const totalInnovators = totalMale + totalFemale;
+    const totalInnovators = totalMale + totalFemale + totalOutsource;
     const malePercentage = ((totalMale / totalInnovators) * 100).toFixed(1);
     const femalePercentage = ((totalFemale / totalInnovators) * 100).toFixed(1);
+    const outsourcePercentage = ((totalOutsource / totalInnovators) * 100).toFixed(1);
 
     // Create summary HTML
     const summaryHtml = `
@@ -148,6 +162,7 @@ function renderSummary(chartData) {
                         <ul class="list-disc pl-5">
                             <li>Laki-laki: ${totalMale.toLocaleString()} (${malePercentage}%)</li>
                             <li>Perempuan: ${totalFemale.toLocaleString()} (${femalePercentage}%)</li>
+                            <li>Perempuan: ${totalOutsource.toLocaleString()} (${outsourcePercentage}%)</li>
                         </ul>
                     </div>
                 </div>
@@ -174,7 +189,7 @@ function renderSummary(chartData) {
                                         <td class="px-4 py-2">${index + 1 == years.length ? "-" : (yearlyGrowth[year].absolute >= 0 ? "+" : "") + yearlyGrowth[year].absolute.toLocaleString()}</td>
                                         <td class="px-4 py-2">${index + 1 == years.length ? "-" : yearlyGrowth[year].percentage + "%"}</td>
                                     </tr>
-                                `,
+                                `
                                     )
                                     .join("")}
                             </tbody>
@@ -191,3 +206,4 @@ function renderSummary(chartData) {
         summaryContainer.innerHTML = summaryHtml;
     }
 }
+window.renderTotalInnovatorWithGenderChart = renderTotalInnovatorWithGenderChart;

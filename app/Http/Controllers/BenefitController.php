@@ -46,9 +46,17 @@ class BenefitController extends Controller
     {
 
         $row = Paper::join('teams', 'papers.team_id', '=', 'teams.id')
+            ->leftJoin(DB::raw("(
+                    SELECT pet.*
+                    FROM pvt_event_teams pet
+                    JOIN events e ON e.id = pet.event_id
+                    WHERE e.status != 'finish'
+                ) as active_pet"), 'active_pet.team_id', '=', 'teams.id')
+            ->leftJoin('events', 'events.id', '=', 'active_pet.event_id')
             ->select(
                 'papers.id as paper_id',
                 'teams.id as team_id',
+                'events.status as event_status',
                 'teams.company_code as company_code',
                 'financial',
                 'file_review',
@@ -61,30 +69,30 @@ class BenefitController extends Controller
                     WHEN papers.status = \'not accepted\' THEN \'na\'
                     WHEN papers.status = \'accepted by facilitator\' THEN \'abf\'
                     WHEN papers.status = \'rejected by facilitator\' THEN \'rbf\'
-                    WHEN papers.status = \'accepted by innovation admin\' THEN \'abia\'
                     WHEN papers.status = \'rejected by innovation admin\' THEN \'rbia\'
                     ELSE papers.status
                 END as status')
             )
             ->where('papers.id', $id)->first();
 
-        if (Auth::user()->role === 'Superadmin') {
-            $is_owner = true;
-        } else {
-            $is_owner = PvtMember::where('employee_id', auth()->user()->employee_id)
-                ->where('team_id', $row->team_id) // Cek apakah user adalah bagian dari tim yang terkait dengan paper
-                ->whereIn('status', ['member', 'leader']) // Atau status lain yang menunjukkan pemilik benefit
-                ->exists(); // Gunakan exists() untuk cek keberadaan pemilik benefit
-        }
-
+            if (Auth::user()->role === 'Superadmin') {
+                $is_owner = true;
+            } else {
+                $is_owner = PvtMember::where('employee_id', auth()->user()->employee_id)
+                    ->where('team_id', $row->team_id) // Cek apakah user adalah bagian dari tim yang terkait dengan paper
+                    ->whereIn('status', ['member', 'leader']) // Atau status lain yang menunjukkan pemilik benefit
+                    ->exists(); // Gunakan exists() untuk cek keberadaan pemilik benefit
+            }
 
         $file_content = null;
         if ($row->file_review) {
             $filePath = storage_path('app/public/' . $row->file_review);
+        
             if (file_exists($filePath)) {
                 $file_content = file_get_contents($filePath);
             }
         }
+
 
         $benefit_custom = CustomBenefitFinancial::query()->get()->keyBy('id')->toArray();
 
@@ -110,23 +118,21 @@ class BenefitController extends Controller
         }
 
         if (PvtEventTeam::where('team_id', $row->team_id)->exists()) {
-            $statusEventTeam = PvtEventTeam::where('team_id', $row->team_id)->first();
-            $isWinnerStatusTeam = $statusEventTeam->status === 'Juara' ? true : false;
             if (Auth::user()->role === 'Superadmin') {
                 // Superadmin bisa edit jika tim berstatus Juara
-                $is_owner = $isWinnerStatusTeam;
+                $is_owner = true;
             } else {
                 // Untuk user biasa (pemilik paper/benefit)
                 $is_owner = PvtMember::where('employee_id', auth()->user()->employee_id)
                     ->where('team_id', $row->team_id)
                     ->whereIn('status', ['member', 'leader'])
-                    ->exists() && !$isWinnerStatusTeam; // Tambahkan pengecekan NOT isWinnerStatusTeam
+                    ->exists();// Tambahkan pengecekan NOT isWinnerStatusTeam
             }
         }
-        $is_disabled = true;
-
+            
         if (($row->status_rollback == 'rollback benefit' ||
                 $row->status == 'accepted paper by facilitator' ||
+                $row->status == 'accepted by innovation admin' ||
                 $row->status == 'upload benefit' ||
                 $row->status == 'rejected benefit by facilitator' ||
                 $row->status == 'revision benefit by facilitator' ||
@@ -134,7 +140,7 @@ class BenefitController extends Controller
                 $row->status == 'revision benefit by general manager' ||
                 $row->status == 'revision paper and benefit by general manager' ||
                 $row->status == 'revision paper and benefit by innovation admin' || $row->status == 'revision benefit by innovation admin') &&
-            $is_owner
+            $is_owner && $row->event_status != 'finish'
         ) {
             $is_disabled = false;
         } else {
@@ -142,6 +148,21 @@ class BenefitController extends Controller
         }
 
         return view('auth.user.benefit.index', compact('row', 'benefit_custom', 'file_content', 'is_owner', 'gmName', 'is_disabled'));
+    }
+    
+    public function previewBenefitPdf($paper_id)
+    {
+        $paper = Paper::findOrFail($paper_id);
+
+        $path = storage_path('app/public/' . $paper->file_review);
+        if (!file_exists($path)) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+            'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'
+        ]);
     }
 
     public function storeBenefitUser(Request $request, $id)
@@ -176,7 +197,7 @@ class BenefitController extends Controller
             // Simpan file baru
             $record->file_review = $request->file('file_review')->storeAs(
                 'file_review',
-                $teamName. "." . $request->file('file_review')->extension(),
+                $teamName . '-' . time() . "." . $request->file('file_review')->extension(),
                 'public'
             );
         } else {
@@ -185,7 +206,7 @@ class BenefitController extends Controller
             }
         }
 
-        $record->status = 'upload benefit';
+        $record->status = 'accepted benefit by general manager';
         $record->updateAndHistory([], 'update benefit form');
 
         // Update custom benefit
@@ -205,80 +226,79 @@ class BenefitController extends Controller
 
         // Cek apakah sudah ada GM dalam tim
         $existingGM = PvtMember::where('team_id', $idTeam)
-            ->where('status', 'gm')
-            ->first();
-
-        if ($existingGM !== null) {
-            if ($request->gm_id !== null) {
-                PvtMember::where('team_id', $idTeam)
-                    ->where('employee_id', $existingGM->employee_id)
-                    ->update([
-                        'employee_id' => $request->gm_id,
-                        'status' => 'gm'
-                    ]);
-            } else {
-                PvtMember::where('team_id', $idTeam)
-                    ->where('employee_id', $existingGM->employee_id)
-                    ->update([
-                        'employee_id' => $request->oldGm,
-                        'status' => 'gm'
-                    ]);
-            }
-        } else {
-            if ($request->gm_id !== null) {
-                PvtMember::create([
-                    'team_id' => $idTeam,
-                    'employee_id' => $request->gm_id,
+        ->where('status', 'gm')
+        ->first();
+    
+        $targetEmployeeId = $request->gm_id ?? $request->oldGm;
+        
+        if ($existingGM) {
+            // Cek apakah employee_id baru sama dengan GM lama
+            if ($existingGM->employee_id != $targetEmployeeId) {
+                // Hanya update baris yang memang statusnya 'gm'
+                PvtMember::where('id', $existingGM->id)->update([
+                    'employee_id' => $targetEmployeeId,
                     'status' => 'gm'
                 ]);
-            } else {
-                return redirect()->route('benefit.create.user', [$id])->withErrors("Error: Gm tidak boleh kosong");
+            }
+        } else {
+            // Belum ada GM di tim, pastikan tidak membuat duplicate GM
+            $existingGmEntry = PvtMember::where('team_id', $idTeam)
+                ->where('employee_id', $targetEmployeeId)
+                ->where('status', 'gm')
+                ->first();
+        
+            if (!$existingGmEntry) {
+                PvtMember::create([
+                    'team_id' => $idTeam,
+                    'employee_id' => $targetEmployeeId,
+                    'status' => 'gm'
+                ]);
             }
         }
 
         // Mengirim email jika status 'upload benefit'
-        if ($record->status === 'upload benefit' && $record->team) {
-            // Ambil data fasilitator
-            $fasilId = PvtMember::where('team_id', $record->team->id)
-                ->where('status', 'facilitator')
-                ->pluck('employee_id')
-                ->first();
+        // if ($record->status === 'upload benefit' && $record->team) {
+        //     // Ambil data fasilitator
+        //     $fasilId = PvtMember::where('team_id', $record->team->id)
+        //         ->where('status', 'facilitator')
+        //         ->pluck('employee_id')
+        //         ->first();
 
-            $fasilData = User::where('employee_id', $fasilId)
-                ->select('name', 'email')
-                ->first();
+        //     $fasilData = User::where('employee_id', $fasilId)
+        //         ->select('name', 'email')
+        //         ->first();
 
-            // Ambil data leader
-            $leaderId = PvtMember::where('team_id', $record->team->id)
-                ->where('status', 'leader')
-                ->pluck('employee_id')
-                ->first();
+        //     // Ambil data leader
+        //     $leaderId = PvtMember::where('team_id', $record->team->id)
+        //         ->where('status', 'leader')
+        //         ->pluck('employee_id')
+        //         ->first();
 
-            $leaderData = User::where('employee_id', $leaderId)
-                ->select('name', 'email')
-                ->first();
+        //     $leaderData = User::where('employee_id', $leaderId)
+        //         ->select('name', 'email')
+        //         ->first();
 
-            $inovasi_lokasi = $record->inovasi_lokasi;
+        //     $inovasi_lokasi = $record->inovasi_lokasi;
 
-            // Membuat objek email dan mengirim email
-            $mail = new EmailNotificationBenefit(
-                $record,
-                $record->status,
-                $record->innovation_title,
-                $record->team->team_name,
-                $leaderData,
-                $record->financial,
-                $record->potential_benefit,
-                $record->potensi_replikasi,
-                $record->non_financial,
-                $fasilData,
-                $inovasi_lokasi
-            );
+        //     // Membuat objek email dan mengirim email
+        //     // $mail = new EmailNotificationBenefit(
+        //     //     $record,
+        //     //     $record->status,
+        //     //     $record->innovation_title,
+        //     //     $record->team->team_name,
+        //     //     $leaderData,
+        //     //     $record->financial,
+        //     //     $record->potential_benefit,
+        //     //     $record->potensi_replikasi,
+        //     //     $record->non_financial,
+        //     //     $fasilData,
+        //     //     $inovasi_lokasi
+        //     // );
 
-            Mail::to($fasilData->email)->send($mail);
-        } else {
-            throw new \Exception('Paper tidak memiliki relasi dengan Team.');
-        }
+        //     // Mail::to($fasilData->email)->send($mail);
+        // } else {
+        //     throw new \Exception('Paper tidak memiliki relasi dengan Team.');
+        // }
 
         return redirect()->route('paper.index')->with('success', 'Benefit Berhasil Di Perbarui');
     }

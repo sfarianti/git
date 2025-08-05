@@ -45,7 +45,7 @@
     <div class="p-2 border-bottom">
         <a href="{{ route('assessment.show.template') }}" class="btn btn-outline-danger btn-sm rounded shadow-sm px-4 py-3 text-uppercase fw-800 me-2 my-1 {{ Route::is('assessment.show.template') ? 'active-link' : '' }}">Template
             Penilaian</a>
-        <a href="{{ route('assessment.show.point') }}" class="btn btn-outline-danger btn-sm rounded shadow-sm px-4 py-3 text-uppercase fw-800 me-2 my-1 {{ Route::is('assessment.show.point') ? 'active-link' : '' }}">Pengaturab Poin Penilaian</a>
+        <a href="{{ route('assessment.show.point') }}" class="btn btn-outline-danger btn-sm rounded shadow-sm px-4 py-3 text-uppercase fw-800 me-2 my-1 {{ Route::is('assessment.show.point') ? 'active-link' : '' }}">Pengaturan Poin Penilaian</a>
     </div>
     @endif
     <div class="mb-3">
@@ -115,14 +115,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="row mt-3">
+                <div class="row mt-3 d-flex justify-content-center align-items-bottom">
                     <div class="col-md-5 mb-3">
+                        <label for="minimumscore_oda">Skor Minimal On Desk</label>
                         <input class="form-control" type="number" name="minimumscore_oda" id="minimumscore_oda" onInput="validasi_minimum_score(this, 900)" placeholder="Masukkan skor minimum Penilaian On Desk" {{ session('buttonStatus') == 'disabled' ? 'disabled' : '' }}>
                         <div class="invalid-feedback">
                             skor minimum tidak boleh melebihi batas.
                         </div>
                     </div>
                     <div class="col-md-5 mb-3">
+                        <label for="minimumscore_pa">Skor Minimal Presentasi</label>
                         <input class="form-control" type="number" name="minimumscore_pa" id="minimumscore_pa" onInput="validasi_minimum_score(this, 950)" placeholder="Masukkan skor minimum Penilaian Presentasi" {{ session('buttonStatus') == 'disabled' ? 'disabled' : '' }}>
                         <div class="invalid-feedback">
                             skor minimum tidak boleh melebihi batas.
@@ -130,7 +132,7 @@
                     </div>
                     <div class="col-md-2 mb-3">
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary" id="btnAssign" {{ session('buttonStatus') == 'disabled' ? 'disabled' : '' }}>Kirim</button>
+                            <button type="submit" class="btn btn-primary" id="btnAssign"  {{ session('buttonStatus') == 'disabled' ? 'disabled' : '' }}>Kirim</button>
                         </div>
                     </div>
                 </div>

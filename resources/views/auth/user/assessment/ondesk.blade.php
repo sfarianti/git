@@ -109,6 +109,11 @@
                 </div>
             </div>
             <div class="card-body">
+                @if($data_event->isNotEmpty())
+                    <div class="mb-3">
+                        @livewire('assessment.ondesk-team-total', ['eventId' => $data_event->first()->id])
+                    </div>
+                @endif
                 <div class="mb-3">
                     <div class="row">
                         <div class="col-md-4 col-sm-4 col-xs-12">
@@ -118,11 +123,7 @@
                                 {{-- <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#filterCategoryModal">Filter Category</button> --}}
                             @endif
                         </div>
-                        <div class="col-md-8 col-sm-8 col-xs-12">
-                            <div id="event-title" class="h5 text-primary"></div>
-                        </div>
                     </div>
-
                 </div>
                 <form id="datatable-card" action="{{ route('assessment.fix.oda') }}" method="POST">
                     @csrf
@@ -170,9 +171,8 @@
                     <div class="form-floating mb-4">
                         <select id="filter-event" name="filter-event" class="form-select">
                             @foreach ($data_event as $event)
-                                <option value="{{ $event->id }}"
-                                    {{ $event->company_code == Auth::user()->company_code ? 'selected' : '' }}>
-                                    {{ $event->event_name }} - {{ $event->year }}
+                                <option value="{{ $event->id }}" {{ $event->company_code == Auth::user()->company_code ? 'selected' : '' }}>
+                                    {{ $event->event_name }} Tahun {{ $event->year }}
                                 </option>
                             @endforeach
                         </select>
@@ -181,7 +181,6 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary">Terapkan Filter</button>
                 </div>
             </div>
         </div>
@@ -224,7 +223,7 @@
                     <h5 class="modal-title" id="title">Fiksasi Nilai Peserta On Desk</h5>
                     <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="form-fixall-oda" action="{{ route('assessment.fix.oda') }}" method="POSt">
+                <form id="form-fixall-oda" action="{{ route('assessment.fix.oda') }}" method="POST">
                     @csrf
                     @method('PUT')
 
@@ -349,12 +348,22 @@
         $('#fix-all-oda').val($(`#filter-event`).val())
 
         $('#filter-event').on('change', function () {
-            dataTable.destroy();
-            dataTable.destroy();
-
-            document.getElementById('datatable-card').insertAdjacentHTML('afterbegin', `<table id="datatable-competition"></table>`);
-            $('#fix-all-oda').val($(`#filter-event`).val())
-
+            const selectedEventId = $(this).val();
+        
+            // Emit ke Livewire
+            Livewire.emit('eventChanged', selectedEventId);
+        
+            // Update hidden input dan datatable
+            $('#fix-all-oda').val(selectedEventId);
+        
+            // Reset DataTable
+            if (dataTable) {
+                dataTable.destroy();
+            }
+        
+            $('#datatable-competition').remove(); // hapus tabel lama
+            $('#datatable-card').prepend('<table id="datatable-competition"></table>');
+        
             column = updateColumnDataTable();
             dataTable = initializeDataTable(column);
         });

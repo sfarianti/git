@@ -63,4 +63,4 @@
     });
 </script>
 
-@vite(['resources/js/financialBenefitChartCompanies.js'])
+<script src="{{ asset('/build/assets/financialBenefitChartCompanies-40409d5f.js') }}" type="module"></script>

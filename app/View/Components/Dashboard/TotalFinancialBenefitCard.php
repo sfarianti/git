@@ -21,7 +21,9 @@ class TotalFinancialBenefitCard extends Component
     public function __construct($isSuperadmin, $userCompanyCode)
     {
         $this->isSuperadmin = $isSuperadmin;
-        $this->userCompanyCode = $userCompanyCode;
+        $this->userCompanyCode = in_array($userCompanyCode, [2000, 7000])
+            ? [2000, 7000]
+            : [$userCompanyCode];
         $this->financialBenefits = $this->getTotalBenefitPerYear('financial');
         $this->potentialBenefits = $this->getTotalBenefitPerYear('potential_benefit');
     }
@@ -38,13 +40,17 @@ class TotalFinancialBenefitCard extends Component
         $benefits = [];
 
         for ($year = $currentYear - 3; $year <= $currentYear; $year++) {
-            $query = Paper::where('status', 'accepted by innovation admin')
-                ->whereYear('created_at', $year);
+            $query = Paper::join('teams', 'papers.team_id', '=', 'teams.id')
+                ->join('pvt_event_teams', 'teams.id', '=', 'pvt_event_teams.team_id')
+                ->join('events', 'pvt_event_teams.event_id', '=', 'events.id')
+                ->where('papers.status', 'accepted by innovation admin')
+                ->where('events.year', $year)
+                ->where('events.status', 'finish');
 
             // Filter data based on user's company code if not a superadmin
             if (!$this->isSuperadmin) {
                 $query->whereHas('team', function ($q) {
-                    $q->where('company_code', $this->userCompanyCode);
+                    $q->whereIn('company_code', $this->userCompanyCode);
                 });
             }
 

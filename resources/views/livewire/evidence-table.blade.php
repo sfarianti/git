@@ -51,15 +51,17 @@
                             <td>Rp.{{ number_format($paper->financial, 0, ',', '.') }}</td>
                             <td>>Rp.{{ number_format($paper->potential_benefit, 0, ',', '.') }}</td>
                             <td class="text-center">
-                                @if ($paper->is_best_of_the_best == false)
-                                    {{ $paper->rank <= 3 ? 'Juara ' . $paper->rank : 'Peserta' }}
-                                @else
+                                @if ($paper->is_best_of_the_best == true)
                                     Best Of The Best
                                     <button type="button" class="btn btn-warning btn-xs" data-bs-toggle="tooltip"
                                         data-bs-placement="top" data-bs-custom-class="custom-tooltip"
                                         data-bs-title="Best of The Best">
                                         <i class="fas fa-trophy" aria-hidden="true"></i>
                                     </button>
+                                @elseif ($paper->is_honorable_winner == true)
+                                    Juara Harapan
+                                @else
+                                    {{ $paper->rank <= 3 ? 'Juara ' . $paper->rank : 'Peserta' }}
                                 @endif
                             </td>
                             <td>

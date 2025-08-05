@@ -95,7 +95,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;"
-                            data-bs-toggle="modal" data-bs-target="#exampleModal">Total Inovasi Kategori Implemented</div>
+                            data-bs-toggle="modal" data-bs-target="#exampleModal">Inovasi Implemented</div>
                         <div class="text-lg fw-bold d-flex align-items-center">
                             <!-- Menampilkan total jumlah inovasi berdasarkan kategori -->
                             {{ $totalImplementedInnovations }}
@@ -117,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Detail Innovation -->
+    <!-- Detail Implemented Innovation -->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content border-0 shadow-lg rounded-3">
@@ -145,15 +145,21 @@
                                 $icon = $icons[$loop->index % count($icons)];
                             @endphp
                             <div class="col-md-6 mb-4">
-                                <div class="card shadow-sm border-0 rounded">
-                                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                        <i data-feather="{{ $icon }}" class="me-2 {{ $color }}"></i>
-                                        <h5 class="m-0 fw-bold {{ $color }}">{{ $item["category_name"] }}</h5>
-                                        <span class="badge bg-primary rounded-pill fs-5 fw-bold">
-                                            {{ $item["count"] ?? 0 }}
-                                        </span>
+                                <a href="{{ route('dashboard.listPaper', [
+                                    'category' => $item['category_name'],
+                                    'status' => 'implemented'
+                                ]) }}"
+                                class="text-decoration-none list-paper-link">
+                                    <div class="card shadow-sm border-0 rounded">
+                                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                            <i data-feather="{{ $icon }}" class="me-2 {{ $color }}"></i>
+                                            <h5 class="m-0 fw-bold {{ $color }}">{{ $item["category_name"] }}</h5>
+                                            <span class="badge bg-primary rounded-pill fs-5 fw-bold">
+                                                {{ $item["count"] ?? 0 }}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         @endforeach
                     </div>
@@ -173,8 +179,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3 flex-grow-1">
-                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">Total Inovasi
-                            Kategori IDEA BOX
+                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">Inovasi IDEA BOX
                         </div>
                         <div class="text-lg fw-bold d-flex align-items-center">
                             {{ $totalIdeaBoxInnovations }}
@@ -195,7 +200,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Detail Idea box -->
     <div class="modal fade" id="ideaBoxModal" tabindex="-1" aria-labelledby="ideaBoxModalLabel"
         aria-hidden="true">
@@ -225,15 +230,21 @@
                                 $icon = $icons[$loop->index % count($icons)];
                             @endphp
                             <div class="col-md-6 mb-4">
-                                <div class="card shadow-sm border-0 rounded">
-                                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                        <i data-feather="{{ $icon }}" class="me-2 {{ $color }}"></i>
-                                        <h5 class="m-0 fw-bold {{ $color }}">{{ $item["category_name"] }}</h5>
-                                        <span class="badge bg-primary rounded-pill fs-5 fw-bold">
-                                            {{ $item["count"] ?? 0 }}
-                                        </span>
+                                <a href="{{ route('dashboard.listPaper', [
+                                    'category' => $item['category_name'],
+                                    'status' => 'idea box'
+                                ]) }}"
+                                class="text-decoration-none list-paper-link">
+                                    <div class="card shadow-sm border-0 rounded">
+                                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                            <i data-feather="{{ $icon }}" class="me-2 {{ $color }}"></i>
+                                            <h5 class="m-0 fw-bold {{ $color }}">{{ $item["category_name"] }}</h5>
+                                            <span class="badge bg-primary rounded-pill fs-5 fw-bold">
+                                                {{ $item["count"] ?? 0 }}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         @endforeach
                     </div>
@@ -247,8 +258,6 @@
             </div>
         </div>
     </div>
-
-
 
     {{-- Total Event Active --}}
     @if ($isSuperadmin || $isAdmin)
@@ -288,10 +297,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <!-- Informasi Teks -->
                     <div class="me-3 flex-grow-1 d-flex flex-column gap-y-2">
-                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">
+                        <div class="small mb-1" style="font-weight: 700; font-size: 1.5rem; color: #ffffff;">
                             Akumulasi Total Inovator
                         </div>
-                        <div class="text-lg fw-bold d-flex align-items-center">
+                        <div class="text-lg fw-bold d-flex align-items-center" id="totalInnovators">
                             {{ $totalInnovators }}
                             <small class="ms-2">(Orang)</small>
                         </div>
@@ -300,18 +309,23 @@
                             <span style="font-weight: 600;">Total Inovator:</span>
                             <div class="mt-3 d-flex justify-content-between">
                                 <span>Laki-laki:</span>
-                                <span class="fw-bold">
+                                <span class="fw-bold" id="totalInnovatorsMale">
                                     {{ $totalInnovatorsMale }} Orang
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Perempuan:</span>
-                                <span class="fw-bold">
+                                <span class="fw-bold" id="totalInnovatorsFemale">
                                     {{ $totalInnovatorsFemale }} Orang
                                 </span>
                             </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Outsoure:</span>
+                                <span class="fw-bold" id="totalInnovatorsOutsource">
+                                    {{ $totalInnovatoresOutsource }} Orang
+                                </span>
+                            </div>
                         </div>
-
                     </div>
                     <!-- Chart -->
                     <div class="chart-container" style="width: 230px; height: 230px; background-color: transparent;">
@@ -324,12 +338,12 @@
 
     <div class="col-12 mb-4"></div>
 
-    <div class="col-lg-6 col-xl-5 mb-4 mx-auto">
+    <div class="col-lg-3 col-xl-4 mb-4 mx-auto">
         <div class="card bg-gradient-green text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3 flex-grow-1">
-                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">Total
+                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">
                             Inovator Laki-laki
                         </div>
                         <div class="text-lg fw-bold d-flex align-items-center">
@@ -337,30 +351,39 @@
                             <small class="ms-2">(Orang)</small>
                         </div>
                     </div>
-                    <div class="icon-circle bg-white-25 flex-shrink-0">
-                        <i class="fa-solid fa-mars fa-xl text-blue"
-                            style="font-size: 40px; font-weight: bolder; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); color: #ffffff;"></i>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6 col-xl-5 mb-4 mx-auto">
+    <div class="col-lg-4 col-xl-4 mb-4 mx-auto">
         <div class="card bg-gradient-green text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3 flex-grow-1">
-                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">Total
+                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">
                             Inovator Perempuan</div>
                         <div class="text-lg fw-bold d-flex align-items-center">
                             {{ $totalInnovatorsFemale }}
                             <small class="ms-2">(Orang)</small>
                         </div>
                     </div>
-                    <div class="icon-circle bg-white-25 flex-shrink-0">
-                        <i class="fa-solid fa-venus fa-xl text-pink"
-                            style="font-size: 40px; font-weight: bolder; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); color: #ffffff;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-xl-4 mb-4 mx-auto">
+        <div class="card bg-gradient-green text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3 flex-grow-1">
+                        <div class="small mb-1" style="font-weight: 700; font-size: 1rem; color: #ffffff;">
+                            Inovator Outsource</div>
+                        <div class="text-lg fw-bold d-flex align-items-center">
+                            {{ $totalInnovatoresOutsource }}
+                            <small class="ms-2">(Orang)</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -372,7 +395,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    function renderInnovatorChart(total, male, female, outsource) {
         const ctx = document.getElementById('innovatorChart').getContext('2d');
         new Chart(ctx, {
             type: 'pie',
@@ -380,10 +403,11 @@
                 labels: [],
                 datasets: [{
                     data: [
-                        {{ $totalInnovators > 0 ? round(($totalInnovatorsMale / $totalInnovators) * 100, 2) : 0 }},
-                        {{ $totalInnovators > 0 ? round(($totalInnovatorsFemale / $totalInnovators) * 100, 2) : 0 }}
+                        total > 0 ? Math.round((male / total) * 100 * 100) / 100 : 0,
+                        total > 0 ? Math.round((female / total) * 100 * 100) / 100 : 0,
+                        total > 0 ? Math.round((outsource / total) * 100 * 100) / 100 : 0
                     ],
-                    backgroundColor: ['#fff', '#c0c0c0'],
+                    backgroundColor: ['#fff', '#c0c0c0', '#71888e'],
                 }]
             },
             options: {
@@ -418,5 +442,12 @@
             },
             plugins: [ChartDataLabels]
         });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const total = parseInt(document.getElementById('totalInnovators').textContent.replace(/\D/g, ''));
+        const male = parseInt(document.getElementById('totalInnovatorsMale').textContent.replace(/\D/g, ''));
+        const female = parseInt(document.getElementById('totalInnovatorsFemale').textContent.replace(/\D/g, ''));
+        const outsource = parseInt(document.getElementById('totalInnovatorsOutsource').textContent.replace(/\D/g, ''));
+        renderInnovatorChart(total, male, female, outsource);
     });
 </script>

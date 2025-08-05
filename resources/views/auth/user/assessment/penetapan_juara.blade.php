@@ -50,7 +50,7 @@
     <!-- Main page content-->
     <div class="container-xl px-4 mt-4">
         {{-- Component Navigation Paper --}}
-        @include('components.assessment.navbar')
+        @include('auth.user.paper.navbar')
 
         <div class="mb-3">
             @if ($errors->any())
@@ -252,7 +252,6 @@
                 <!-- Modal Footer -->
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary">Terapkan Filter</button>
                 </div>
             </div>
         </div>
@@ -301,7 +300,6 @@
                 "columns": [
                     { title: "No", data: null, orderable: false },
                     { title: "Tim", data: 'Tim', orderable: true }, // Adjust the column to match the modified DataTable
-                    { title: "Judul", data: 'judul' },
                     { title: "Kategori", data: 'kategori' },
                     { title: "Ranking", data: 'Ranking' }
                 ],
@@ -389,9 +387,9 @@
                     },
                     "columns": [
                         { title: "No", data: null, orderable: false },
-                        { title: "Tim", data: 'Tim', orderable: true },
-                        { title: "Judul", data: 'judul' },
-                        { title: "Kategori", data: 'kategori' },
+                        { title: "Tim", data: 'team_name', orderable: true },
+                        { title: "Judul", data: 'Judul' },
+                        { title: "Kategori", data: 'Kategori' },
                         { title: "Skor Akhir", data: 'final_score' },
                         { title: "Ranking", data: 'Ranking' }
                     ],

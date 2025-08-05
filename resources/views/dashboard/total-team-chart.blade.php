@@ -5,7 +5,7 @@
     <div class="container mt-3">
         <div class="card">
             <div class="card-header" style="background-color: #eb4a3a">
-                <h5 class="text-white">Chart Total Tim</h5>
+                <h5 class="text-white">Chart Total Inovasi Di Tiap Perusahaan</h5>
             </div>
             <div class="card-body">
                 <canvas id="total-team-chart"></canvas>
@@ -21,4 +21,4 @@
     </div>
 @endsection
 
-@vite(['resources/js/totalTeamChart.js'])
+<script src="{{ asset('build/assets/totalTeamChart-825c7226.js') }}" type="module"></script>

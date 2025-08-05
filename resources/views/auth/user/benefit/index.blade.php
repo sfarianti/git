@@ -114,11 +114,11 @@
 
 
                                     <div class="mb-3">
-                                        <h6 class="small mb-1">Pilih Band 1 (General Manager)</h6>
+                                        <h6 class="small mb-1">Pilih Band 1</h6>
                                         <input type="hidden" name="team_id" value="{{ $row->team_id }}">
                                         <select class="form-select @error('gm_id') is-invalid @enderror"
                                             aria-label="Default select example" name="gm_id" id="id_gm"
-                                            value="{{ old('gm_id') }}" placeholder="Pilih GM"
+                                            value="{{ old('gm_id') }}" placeholder="Pilih Band 1"
                                             {{ $is_disabled ? 'disabled' : '' }}></select>
                                         @error('gm_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -127,7 +127,7 @@
                                     @if ($gmName !== null)
                                         <div class="mb-3">
                                             <input type="hidden" name="oldGm" value="{{ $gmName->employee_id }}">
-                                            <div class="h6">Nama General Manager yang di Pilih Sebelumnnya : </div>
+                                            <div class="h6">Nama Band 1 yang di Pilih Sebelumnnya : </div>
                                             <div class="h5">{{ $gmName->name }}</div>
                                             <hr>
                                         </div>
@@ -147,8 +147,7 @@
                                     <div class="file-review mb-0">
                                         @if ($file_content)
                                             <!-- Tampilkan gambar jika ada file -->
-                                            <embed src="data:application/pdf;base64,{{ base64_encode($file_content) }}"
-                                                width="100%" height="500px" />
+                                            <embed src="{{ route('benefit.preview.benefit', ['paper_id' => $row->paper_id]) }}" width="100%" height="500px" type="application/pdf">
                                         @else
                                             <p>No File Attached</p>
                                         @endif
@@ -259,8 +258,7 @@
                 // theme: "classic",
                 allowClear: true,
                 width: "100%",
-                placeholder: "Pilih " + select_element_id.split("_")[1] + (select_element_id.split("_")[2] ? " " +
-                    select_element_id.split("_")[2] + " : " : " : "),
+                placeholder: "Pilih Band 1",
                 ajax: {
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -281,7 +279,7 @@
                             results: $.map(data, function(item) {
                                 return {
                                     text: item.employee_id + ' - ' + item.name + ' - ' + item
-                                        .company_name, // Nama yang akan ditampilkan di kotak seleksi
+                                        .company_name + ' (' + item.job_level + ')', // Nama yang akan ditampilkan di kotak seleksi
                                     id: item.employee_id // Nilai yang akan dikirimkan saat opsi dipilih
                                 };
                             })

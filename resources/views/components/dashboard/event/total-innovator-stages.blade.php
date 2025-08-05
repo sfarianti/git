@@ -8,13 +8,19 @@
 </div>
 
 <script type="module">
-    import { renderTotalInnovatorStagesChart } from "{{ Vite::asset('resources/js/event/totalInnovatorStages.js') }}";
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartData = @json($chartData);
+        const event_name = @json($event_name);
 
-    const chartDataExportTotalInnovatorStages = @json($chartData);
-    const event_name = @json($event_name);
-    window.chartDataExportTotalInnovatorStages = chartDataExportTotalInnovatorStages;
-    window.event_name = event_name;
-    renderTotalInnovatorStagesChart('totalInnovatorStagesChart', chartDataExportTotalInnovatorStages);
+        window.chartDataExportTotalInnovatorStages = chartData;
+        window.event_name = event_name;
+
+        if (typeof window.renderTotalInnovatorStagesChart === 'function') {
+            window.renderTotalInnovatorStagesChart('totalInnovatorStagesChart', chartData);
+        }
+    });
 </script>
 
-@vite(['resources/js/event/exportTotalInnovatorStages.js'])
+<script type="module" src="{{ asset('build/assets/totalInnovatorStages-286ed23d.js') }}"></script>
+<script type="module" src="{{ asset('build/assets/exportTotalInnovatorStages-152e8980.js') }}"></script>
+
